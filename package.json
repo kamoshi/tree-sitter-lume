@@ -1,0 +1,20 @@
+{
+  "name": "tree-sitter-lume",
+  "version": "0.0.1",
+  "description": "Lume grammar for tree-sitter",
+  "main": "bindings/node",
+  "devDependencies": {
+    "tree-sitter-cli": "^0.20.0"
+  },
+  "tree-sitter": [
+    {
+      "scope": "source.lume",
+      "file-types": [
+        "lume"
+      ],
+      "highlights": [
+        "../../languages/Lume/highlights.scm"
+      ]
+    }
+  ]
+}

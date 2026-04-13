@@ -1,0 +1,24 @@
+# Ignore everything by default
+*
+
+# Whitelist root configuration files
+!.gitignore
+!grammar.js
+!package.json
+!package-lock.json
+!binding.gyp
+!Cargo.toml
+!README.md
+!LICENSE
+
+# Whitelist source files (including generated parser code)
+!src/
+!src/**
+
+# Whitelist queries
+!queries/
+!queries/**
+
+# Whitelist language bindings
+!bindings/
+!bindings/**
