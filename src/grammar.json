@@ -30,8 +30,25 @@
           }
         },
         {
-          "type": "SYMBOL",
-          "name": "_expr"
+          "type": "CHOICE",
+          "members": [
+            {
+              "type": "SEQ",
+              "members": [
+                {
+                  "type": "STRING",
+                  "value": "pub"
+                },
+                {
+                  "type": "SYMBOL",
+                  "name": "_expr"
+                }
+              ]
+            },
+            {
+              "type": "BLANK"
+            }
+          ]
         }
       ]
     },
@@ -890,8 +907,17 @@
             "type": "FIELD",
             "name": "argument",
             "content": {
-              "type": "SYMBOL",
-              "name": "_atom"
+              "type": "CHOICE",
+              "members": [
+                {
+                  "type": "SYMBOL",
+                  "name": "_atom"
+                },
+                {
+                  "type": "SYMBOL",
+                  "name": "record_expr"
+                }
+              ]
             }
           }
         ]

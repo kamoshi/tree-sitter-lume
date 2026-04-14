@@ -199,16 +199,16 @@ module.exports = grammar({
 		// TOP LEVEL
 		// ========================================================================
 		//
-		// In RD: parseProgram() { while(use) parseUse(); while(let|type) ...; parseExpr(); }
+		// In RD: parseProgram() { while(use) parseUse(); while(let|type) ...; optional(pub expr); }
 		// In LR: `repeat` compiles to a loop in the state machine: when the next
 		// token cannot start a use_declaration, exit the loop and try the next
-		// alternative. Because `let` and `type` are unambiguous start tokens,
-		// no conflict arises here.
+		// alternative. Because `let`, `type`, and `pub` are unambiguous start
+		// tokens here, no conflict arises.
 		program: ($) =>
 			seq(
 				repeat($.use_declaration),
 				repeat(choice($.type_definition, $.binding)),
-				$._expr,
+				optional(seq("pub", $._expr)),
 			),
 
 		// The comment rule is a regex terminal - the lexer matches it greedily
@@ -515,6 +515,7 @@ module.exports = grammar({
 		// This is the most important rule in the grammar. Read carefully.
 		//
 		// WHAT WE WANT: `f x y z` -> apply(apply(apply(f, x), y), z)
+		// Also: `f { x: 1 }` -> apply(f, record_expr)
 		//
 		// NAIVE APPROACH (broken):
 		//   apply: $ => seq($._atom, repeat1($._atom))
@@ -528,8 +529,8 @@ module.exports = grammar({
 		//
 		// CORRECT APPROACH (this):
 		//   apply: $ => prec.left(PREC.APPLY, seq(
-		//     choice($.apply, $._atom),   <- left-recursive
-		//     $._atom
+		//     choice($.apply, $._atom),              <- left-recursive
+		//     choice($._atom, $.record_expr)
 		//   ))
 		//
 		//   This generates two LR productions:
@@ -565,7 +566,7 @@ module.exports = grammar({
 				PREC.APPLY,
 				seq(
 					field("function", choice($.apply, $._atom)),
-					field("argument", $._atom),
+					field("argument", choice($._atom, $.record_expr)),
 				),
 			),
 
@@ -573,12 +574,11 @@ module.exports = grammar({
 		// ATOMS - primary / non-operator expressions
 		// ========================================================================
 		//
-		// _atom is INLINE. It enumerates every expression form that can appear
-		// as a function argument without parentheses. Notably ABSENT: record_expr.
-		// `{` is intentionally not an atom start - it marks the end of a module
-		// (the final expression) and cannot be a function argument. This mirrors
-		// the Lume RD parser's `can_start_atom` predicate which explicitly excludes
-		// LBrace.
+		// _atom is INLINE. It enumerates almost every expression form that can
+		// appear as a function argument without parentheses. record_expr remains
+		// intentionally OUTSIDE _atom, but apply explicitly accepts it as a direct
+		// argument. `{` is therefore not a general atom start, but it is allowed
+		// in the specific `f { ... }` application shape.
 		_atom: ($) =>
 			choice(
 				$.field_access,
