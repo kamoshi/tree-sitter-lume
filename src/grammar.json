@@ -1,4 +1,5 @@
 {
+  "$schema": "https://tree-sitter.github.io/tree-sitter/assets/schemas/grammar.schema.json",
   "name": "lume",
   "word": "identifier",
   "rules": {
@@ -252,10 +253,10 @@
       }
     },
     "match_expression": {
-      "type": "PREC",
-      "value": 1,
+      "type": "REPEAT1",
       "content": {
-        "type": "REPEAT1",
+        "type": "PREC_RIGHT",
+        "value": 1,
         "content": {
           "type": "SEQ",
           "members": [
@@ -318,6 +319,10 @@
         {
           "type": "SYMBOL",
           "name": "apply"
+        },
+        {
+          "type": "SYMBOL",
+          "name": "record_expr"
         },
         {
           "type": "SYMBOL",
@@ -696,10 +701,6 @@
         {
           "type": "SYMBOL",
           "name": "bool"
-        },
-        {
-          "type": "SYMBOL",
-          "name": "record_expr"
         },
         {
           "type": "SYMBOL",
@@ -1485,11 +1486,14 @@
     [
       "field_access",
       "identifier"
+    ],
+    [
+      "match_expression"
     ]
   ],
   "precedences": [],
   "externals": [],
   "inline": [],
-  "supertypes": []
+  "supertypes": [],
+  "reserved": {}
 }
-

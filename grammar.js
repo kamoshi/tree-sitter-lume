@@ -28,6 +28,7 @@ module.exports = grammar({
     [$._type_primary, $.type_apply],
     [$.variant],
     [$.field_access, $.identifier],
+    [$.match_expression],
   ],
 
   word: $ => $.identifier,
@@ -83,9 +84,9 @@ module.exports = grammar({
       $._expression
     )),
 
-    match_expression: $ => prec(PREC.FUNCTION, repeat1(
-      seq("|", $.pattern, optional($.guard), "->", $._expression)
-    )),
+    match_expression: $ => repeat1(
+      prec.right(PREC.FUNCTION, seq("|", $.pattern, optional($.guard), "->", $._expression))
+    ),
 
     guard: $ => seq("if", $._expression),
 
@@ -93,6 +94,7 @@ module.exports = grammar({
       $.pipe_expression,
       $.binary_expression,
       $.apply,
+      $.record_expr,
       $._atom
     ),
 
@@ -129,7 +131,6 @@ module.exports = grammar({
       $.number,
       $.string,
       $.bool,
-      $.record_expr,
       $.list_expr,
       $.if_expr,
       seq("(", $._expression, ")")
