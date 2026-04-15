@@ -83,8 +83,8 @@
 const PREC = {
 	FUNCTION: 1, // ->  lowest, loosest binding, right-associative
 	PIPE: 2, // |>, ?>
-	OR: 3, // or
-	AND: 4, // and
+	OR: 3, // ||
+	AND: 4, // &&
 	COMPARE: 5, // ==, !=, <, >, <=, >=
 	CONCAT: 6, // ++
 	ADD: 7, // +, -
@@ -267,6 +267,33 @@ module.exports = grammar({
 				optional(seq(":", field("type", $.type))),
 				"=",
 				field("body", $._expr),
+				// Optional `and let …` continuations for mutually recursive groups.
+				// `and` cannot start any other top-level form, so the shift here is
+				// always unambiguous — no GLR conflict needed.
+				repeat(seq(
+					"and",
+					"let",
+					field("pattern", $.pattern),
+					optional(seq(":", field("type", $.type))),
+					"=",
+					field("body", $._expr),
+				)),
+			),
+
+		// `let pattern (: type)? = value in body` — expression-level let binding.
+		// Unlike top-level `binding`, this requires the `in` keyword and produces
+		// a value. Chaining is natural: `let x = 1 in let y = 2 in x + y`.
+		// `let` is a keyword so it cannot appear in `pattern` or `_atom`, meaning
+		// no GLR conflict with lambda or _atom arises here.
+		let_in_expr: ($) =>
+			seq(
+				"let",
+				field("pattern", $.pattern),
+				optional(seq(":", field("type", $.type))),
+				"=",
+				field("value", $._expr),
+				"in",
+				field("body", $._expr),
 			),
 
 		// ========================================================================
@@ -286,7 +313,7 @@ module.exports = grammar({
 		// In tree-sitter you write the same three choices; the LR automaton works
 		// out the distinction from the token stream. The GLR [$.pattern, $._atom]
 		// conflict handles the lambda/expression ambiguity for the first two cases.
-		_expr: ($) => choice($.lambda, $.match_expr, $._binary_expr),
+		_expr: ($) => choice($.let_in_expr, $.lambda, $.match_expr, $._binary_expr),
 
 		// -- Lambda -----------------------------------------------------------
 		//
@@ -408,7 +435,7 @@ module.exports = grammar({
 					PREC.OR,
 					seq(
 						field("left", $._binary_expr),
-						field("op", "or"),
+						field("op", "||"),
 						field("right", $._binary_expr),
 					),
 				),
@@ -416,7 +443,7 @@ module.exports = grammar({
 					PREC.AND,
 					seq(
 						field("left", $._binary_expr),
-						field("op", "and"),
+						field("op", "&&"),
 						field("right", $._binary_expr),
 					),
 				),
