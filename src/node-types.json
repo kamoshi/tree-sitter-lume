@@ -342,6 +342,10 @@
             "named": true
           },
           {
+            "type": "match_in_expr",
+            "named": true
+          },
+          {
             "type": "number",
             "named": true
           },
@@ -367,6 +371,16 @@
           },
           {
             "type": "variant_expr",
+            "named": true
+          }
+        ]
+      },
+      "constraints": {
+        "multiple": false,
+        "required": false,
+        "types": [
+          {
+            "type": "constraint_list",
             "named": true
           }
         ]
@@ -397,6 +411,47 @@
     "type": "bool",
     "named": true,
     "fields": {}
+  },
+  {
+    "type": "constraint",
+    "named": true,
+    "fields": {
+      "trait": {
+        "multiple": false,
+        "required": true,
+        "types": [
+          {
+            "type": "type_identifier",
+            "named": true
+          }
+        ]
+      },
+      "var": {
+        "multiple": false,
+        "required": true,
+        "types": [
+          {
+            "type": "identifier",
+            "named": true
+          }
+        ]
+      }
+    }
+  },
+  {
+    "type": "constraint_list",
+    "named": true,
+    "fields": {},
+    "children": {
+      "multiple": true,
+      "required": true,
+      "types": [
+        {
+          "type": "constraint",
+          "named": true
+        }
+      ]
+    }
   },
   {
     "type": "field_access",
@@ -431,6 +486,10 @@
         "types": [
           {
             "type": "identifier",
+            "named": true
+          },
+          {
+            "type": "type_identifier",
             "named": true
           }
         ]
@@ -480,6 +539,10 @@
             "named": true
           },
           {
+            "type": "match_in_expr",
+            "named": true
+          },
+          {
             "type": "number",
             "named": true
           },
@@ -521,6 +584,10 @@
         "types": [
           {
             "type": "identifier",
+            "named": true
+          },
+          {
+            "type": "type_identifier",
             "named": true
           }
         ]
@@ -741,6 +808,10 @@
             "named": true
           },
           {
+            "type": "match_in_expr",
+            "named": true
+          },
+          {
             "type": "number",
             "named": true
           },
@@ -815,6 +886,10 @@
             "named": true
           },
           {
+            "type": "match_in_expr",
+            "named": true
+          },
+          {
             "type": "number",
             "named": true
           },
@@ -840,6 +915,146 @@
           },
           {
             "type": "variant_expr",
+            "named": true
+          }
+        ]
+      }
+    }
+  },
+  {
+    "type": "impl_definition",
+    "named": true,
+    "fields": {
+      "trait": {
+        "multiple": false,
+        "required": true,
+        "types": [
+          {
+            "type": "type_identifier",
+            "named": true
+          }
+        ]
+      },
+      "type_name": {
+        "multiple": false,
+        "required": true,
+        "types": [
+          {
+            "type": "type_identifier",
+            "named": true
+          }
+        ]
+      }
+    },
+    "children": {
+      "multiple": true,
+      "required": false,
+      "types": [
+        {
+          "type": "impl_method",
+          "named": true
+        }
+      ]
+    }
+  },
+  {
+    "type": "impl_method",
+    "named": true,
+    "fields": {
+      "body": {
+        "multiple": false,
+        "required": true,
+        "types": [
+          {
+            "type": "apply",
+            "named": true
+          },
+          {
+            "type": "binary_expr",
+            "named": true
+          },
+          {
+            "type": "bool",
+            "named": true
+          },
+          {
+            "type": "field_access",
+            "named": true
+          },
+          {
+            "type": "identifier",
+            "named": true
+          },
+          {
+            "type": "if_expr",
+            "named": true
+          },
+          {
+            "type": "lambda",
+            "named": true
+          },
+          {
+            "type": "let_in_expr",
+            "named": true
+          },
+          {
+            "type": "list_expr",
+            "named": true
+          },
+          {
+            "type": "match_expr",
+            "named": true
+          },
+          {
+            "type": "match_in_expr",
+            "named": true
+          },
+          {
+            "type": "number",
+            "named": true
+          },
+          {
+            "type": "paren_expr",
+            "named": true
+          },
+          {
+            "type": "pipe_expr",
+            "named": true
+          },
+          {
+            "type": "record_expr",
+            "named": true
+          },
+          {
+            "type": "string",
+            "named": true
+          },
+          {
+            "type": "type_identifier",
+            "named": true
+          },
+          {
+            "type": "variant_expr",
+            "named": true
+          }
+        ]
+      },
+      "name": {
+        "multiple": false,
+        "required": true,
+        "types": [
+          {
+            "type": "identifier",
+            "named": true
+          }
+        ]
+      },
+      "type": {
+        "multiple": false,
+        "required": false,
+        "types": [
+          {
+            "type": "type",
             "named": true
           }
         ]
@@ -892,6 +1107,10 @@
           },
           {
             "type": "match_expr",
+            "named": true
+          },
+          {
+            "type": "match_in_expr",
             "named": true
           },
           {
@@ -982,6 +1201,10 @@
           },
           {
             "type": "match_expr",
+            "named": true
+          },
+          {
+            "type": "match_in_expr",
             "named": true
           },
           {
@@ -1079,6 +1302,10 @@
             "named": true
           },
           {
+            "type": "match_in_expr",
+            "named": true
+          },
+          {
             "type": "number",
             "named": true
           },
@@ -1156,6 +1383,10 @@
         },
         {
           "type": "match_expr",
+          "named": true
+        },
+        {
+          "type": "match_in_expr",
           "named": true
         },
         {
@@ -1257,6 +1488,10 @@
             "named": true
           },
           {
+            "type": "match_in_expr",
+            "named": true
+          },
+          {
             "type": "number",
             "named": true
           },
@@ -1324,6 +1559,84 @@
     }
   },
   {
+    "type": "match_in_expr",
+    "named": true,
+    "fields": {
+      "scrutinee": {
+        "multiple": false,
+        "required": true,
+        "types": [
+          {
+            "type": "apply",
+            "named": true
+          },
+          {
+            "type": "binary_expr",
+            "named": true
+          },
+          {
+            "type": "bool",
+            "named": true
+          },
+          {
+            "type": "field_access",
+            "named": true
+          },
+          {
+            "type": "identifier",
+            "named": true
+          },
+          {
+            "type": "if_expr",
+            "named": true
+          },
+          {
+            "type": "list_expr",
+            "named": true
+          },
+          {
+            "type": "number",
+            "named": true
+          },
+          {
+            "type": "paren_expr",
+            "named": true
+          },
+          {
+            "type": "pipe_expr",
+            "named": true
+          },
+          {
+            "type": "record_expr",
+            "named": true
+          },
+          {
+            "type": "string",
+            "named": true
+          },
+          {
+            "type": "type_identifier",
+            "named": true
+          },
+          {
+            "type": "variant_expr",
+            "named": true
+          }
+        ]
+      }
+    },
+    "children": {
+      "multiple": true,
+      "required": true,
+      "types": [
+        {
+          "type": "match_arm",
+          "named": true
+        }
+      ]
+    }
+  },
+  {
     "type": "paren_expr",
     "named": true,
     "fields": {},
@@ -1372,6 +1685,10 @@
           "named": true
         },
         {
+          "type": "match_in_expr",
+          "named": true
+        },
+        {
           "type": "number",
           "named": true
         },
@@ -1397,6 +1714,21 @@
         },
         {
           "type": "variant_expr",
+          "named": true
+        }
+      ]
+    }
+  },
+  {
+    "type": "paren_type",
+    "named": true,
+    "fields": {},
+    "children": {
+      "multiple": false,
+      "required": true,
+      "types": [
+        {
+          "type": "type",
           "named": true
         }
       ]
@@ -1626,6 +1958,10 @@
           "named": true
         },
         {
+          "type": "impl_definition",
+          "named": true
+        },
+        {
           "type": "lambda",
           "named": true
         },
@@ -1639,6 +1975,10 @@
         },
         {
           "type": "match_expr",
+          "named": true
+        },
+        {
+          "type": "match_in_expr",
           "named": true
         },
         {
@@ -1659,6 +1999,10 @@
         },
         {
           "type": "string",
+          "named": true
+        },
+        {
+          "type": "trait_definition",
           "named": true
         },
         {
@@ -1812,6 +2156,68 @@
     }
   },
   {
+    "type": "trait_definition",
+    "named": true,
+    "fields": {
+      "name": {
+        "multiple": false,
+        "required": true,
+        "types": [
+          {
+            "type": "type_identifier",
+            "named": true
+          }
+        ]
+      },
+      "param": {
+        "multiple": false,
+        "required": true,
+        "types": [
+          {
+            "type": "identifier",
+            "named": true
+          }
+        ]
+      }
+    },
+    "children": {
+      "multiple": true,
+      "required": false,
+      "types": [
+        {
+          "type": "trait_method",
+          "named": true
+        }
+      ]
+    }
+  },
+  {
+    "type": "trait_method",
+    "named": true,
+    "fields": {
+      "name": {
+        "multiple": false,
+        "required": true,
+        "types": [
+          {
+            "type": "identifier",
+            "named": true
+          }
+        ]
+      },
+      "type": {
+        "multiple": false,
+        "required": true,
+        "types": [
+          {
+            "type": "type",
+            "named": true
+          }
+        ]
+      }
+    }
+  },
+  {
     "type": "type",
     "named": true,
     "fields": {},
@@ -1824,11 +2230,11 @@
           "named": true
         },
         {
-          "type": "record_type",
+          "type": "paren_type",
           "named": true
         },
         {
-          "type": "type",
+          "type": "record_type",
           "named": true
         },
         {
@@ -1855,23 +2261,15 @@
         "required": true,
         "types": [
           {
-            "type": "(",
-            "named": false
-          },
-          {
-            "type": ")",
-            "named": false
-          },
-          {
             "type": "identifier",
             "named": true
           },
           {
-            "type": "record_type",
+            "type": "paren_type",
             "named": true
           },
           {
-            "type": "type",
+            "type": "record_type",
             "named": true
           },
           {
@@ -1915,17 +2313,17 @@
             "named": true
           }
         ]
+      },
+      "variant": {
+        "multiple": true,
+        "required": true,
+        "types": [
+          {
+            "type": "variant",
+            "named": true
+          }
+        ]
       }
-    },
-    "children": {
-      "multiple": true,
-      "required": true,
-      "types": [
-        {
-          "type": "variant",
-          "named": true
-        }
-      ]
     }
   },
   {
@@ -2115,6 +2513,10 @@
     "named": false
   },
   {
+    "type": "=>",
+    "named": false
+  },
+  {
     "type": ">",
     "named": false
   },
@@ -2172,6 +2574,10 @@
     "named": false
   },
   {
+    "type": "match",
+    "named": false
+  },
+  {
     "type": "number",
     "named": true
   },
@@ -2185,6 +2591,10 @@
   },
   {
     "type": "then",
+    "named": false
+  },
+  {
+    "type": "trait",
     "named": false
   },
   {

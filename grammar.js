@@ -192,6 +192,23 @@ module.exports = grammar({
 		// behaviour. This is the declarative grammar's equivalent of the RD
 		// parser's greedy while-loop.
 		[$.match_expr],
+
+		// -- match_in_expr self-conflict ----------------------------------------
+		// Same greedy arm-accumulation as match_expr, but for the `match x in`
+		// form. After each arm body, `|` is shifted into the match_in_expr rather
+		// than returned to the outer context.
+		[$.match_in_expr],
+
+		// -- constraint_list vs paren_type -------------------------------------
+		// `( TypeIdent identifier )` is ambiguous: it could be a single-constraint
+		// list `(Trait a)` (if `=>` follows) or a parenthesised type `(List a)`
+		// (if `->` or another type-level token follows). GLR forks at `(` and
+		// resolves on the token after `)`: `=>` → constraint_list wins; anything
+		// else → paren_type wins.
+		// The secondary conflict between `constraint` and `type_apply` handles
+		// the inner `TypeIdent identifier` sequence, which is valid in both rules.
+		[$.constraint_list, $.paren_type],
+		[$.constraint, $._type_primary],
 	],
 
 	rules: {
@@ -204,10 +221,22 @@ module.exports = grammar({
 		// token cannot start a use_declaration, exit the loop and try the next
 		// alternative. Because `let`, `type`, and `pub` are unambiguous start
 		// tokens here, no conflict arises.
+		// All top-level items in one flat repeat: use_declaration, type_definition,
+		// trait_definition, impl_definition, and binding can appear in any order.
+		// After `use`, the second token disambiguates deterministically: an
+		// uppercase TypeIdent → impl_definition; lowercase ident or `{` →
+		// use_declaration. All other item-starting tokens are unique keywords.
 		program: ($) =>
 			seq(
-				repeat($.use_declaration),
-				repeat(choice($.type_definition, $.binding)),
+				repeat(
+					choice(
+						$.use_declaration,
+						$.type_definition,
+						$.trait_definition,
+						$.impl_definition,
+						$.binding,
+					),
+				),
 				optional(seq("pub", $._expr)),
 			),
 
@@ -242,10 +271,13 @@ module.exports = grammar({
 				// cannot be an identifier.
 				repeat(field("param", $.identifier)),
 				"=",
-				// repeat1 of variants: each arm starts with `|`, which is the
-				// unambiguous sentinel. The type_definition self-conflict declared above
-				// handles GLR forking for the optional trailing structure.
-				repeat1(seq("|", $.variant)),
+				// The first `|` pipe is optional: `type Foo = Bar | Baz` and
+				// `type Foo = | Bar | Baz` are both valid. The type_definition
+				// self-conflict declared above handles GLR forking for the optional
+				// trailing structure.
+				optional("|"),
+				field("variant", $.variant),
+				repeat(seq("|", field("variant", $.variant))),
 			),
 
 		// A variant is a TypeIdent with an optional record_type payload.
@@ -261,10 +293,16 @@ module.exports = grammar({
 			seq(
 				"let",
 				field("pattern", $.pattern),
-				// The `:` token unambiguously signals a type annotation, so `optional`
-				// here compiles to a deterministic check: if `:` is present, parse a
-				// type; otherwise skip. No conflict needed.
-				optional(seq(":", field("type", $.type))),
+				// `:` signals a type annotation. The type annotation may be prefixed
+				// with a constraint list: `(ToText a, ToText b) => a -> b -> Text`.
+				// After `(`, GLR forks: one branch tries constraint_list (resolved
+				// if `=>` follows `)`) and one tries paren_type. The
+				// [$.constraint_list, $.paren_type] conflict handles this.
+				optional(seq(
+					":",
+					optional(seq(field("constraints", $.constraint_list), "=>")),
+					field("type", $.type),
+				)),
 				"=",
 				field("body", $._expr),
 				// Optional `and let …` continuations for mutually recursive groups.
@@ -278,6 +316,60 @@ module.exports = grammar({
 					"=",
 					field("body", $._expr),
 				)),
+			),
+
+		// ========================================================================
+		// TRAIT AND IMPL DEFINITIONS
+		// ========================================================================
+
+		// `trait Name a { let method : type }` — declares a typeclass interface.
+		// The body is a sequence of method signatures, each starting with `let`.
+		// `trait` is a keyword (word extraction applies automatically).
+		trait_definition: ($) =>
+			seq(
+				"trait",
+				field("name", $.type_identifier),
+				field("param", $.identifier),
+				"{",
+				repeat($.trait_method),
+				"}",
+			),
+
+		// A trait method signature: `let toText : a -> Text`
+		// Optional trailing comma allows both comma-separated and whitespace-
+		// separated styles inside the trait body.
+		trait_method: ($) =>
+			seq(
+				"let",
+				field("name", $.identifier),
+				":",
+				field("type", $.type),
+				optional(","),
+			),
+
+		// `use Trait in Type { let method = expr }` — provides a trait instance.
+		// Disambiguated from use_declaration by the uppercase TypeIdent after `use`.
+		impl_definition: ($) =>
+			seq(
+				"use",
+				field("trait", $.type_identifier),
+				"in",
+				field("type_name", $.type_identifier),
+				"{",
+				repeat($.impl_method),
+				"}",
+			),
+
+		// An impl method: `let name = body` or `let name : Type = body`.
+		// The optional type annotation matches the explicit-annotation form.
+		impl_method: ($) =>
+			seq(
+				"let",
+				field("name", $.identifier),
+				optional(seq(":", field("type", $.type))),
+				"=",
+				field("body", $._expr),
+				optional(","),
 			),
 
 		// `let pattern (: type)? = value in body` — expression-level let binding.
@@ -313,7 +405,24 @@ module.exports = grammar({
 		// In tree-sitter you write the same three choices; the LR automaton works
 		// out the distinction from the token stream. The GLR [$.pattern, $._atom]
 		// conflict handles the lambda/expression ambiguity for the first two cases.
-		_expr: ($) => choice($.let_in_expr, $.lambda, $.match_expr, $._binary_expr),
+		_expr: ($) => choice($.let_in_expr, $.lambda, $.match_expr, $.match_in_expr, $._binary_expr),
+
+		// -- Match-in expression -----------------------------------------------
+		//
+		// `match scrutinee in | pat -> body | pat -> body`
+		// An explicit scrutinee version of match. The keyword `match` unambiguously
+		// starts the rule, and `in` separates the scrutinee from the arms.
+		// The scrutinee uses $._binary_expr (no lambdas) to avoid ambiguity with
+		// the `in` keyword that follows.
+		// The [$.match_in_expr] self-conflict + prec.right on match_arm give the
+		// same greedy arm-accumulation as match_expr.
+		match_in_expr: ($) =>
+			seq(
+				"match",
+				field("scrutinee", $._binary_expr),
+				"in",
+				repeat1($.match_arm),
+			),
 
 		// -- Lambda -----------------------------------------------------------
 		//
@@ -736,13 +845,15 @@ module.exports = grammar({
 			),
 
 		// field_initializer: `name` (shorthand) or `name: value` (explicit).
+		// The name can be a lowercase identifier OR an uppercase type_identifier
+		// (for constructor shorthand: `pub { Circle }` exports the constructor).
 		// The [$.field_pattern, $.field_initializer] GLR conflict arises because
 		// both share the `identifier optional(":" ...)` prefix - the difference is
 		// only resolved when we know whether we're inside a record_pattern or a
 		// record_expr, which depends on whether `->` follows the enclosing `{...}`.
 		field_initializer: ($) =>
 			seq(
-				field("name", $.identifier),
+				field("name", choice($.identifier, $.type_identifier)),
 				optional(seq(":", field("value", $._expr))),
 			),
 
@@ -798,9 +909,13 @@ module.exports = grammar({
 				"}",
 			),
 
+		// field_pattern: destructuring field — `name` or `name: pattern`.
+		// The name can be a lowercase identifier OR an uppercase type_identifier
+		// to support module imports like `use { Shape, Circle } = "path"` where
+		// constructors/types are also valid field names.
 		field_pattern: ($) =>
 			seq(
-				field("name", $.identifier),
+				field("name", choice($.identifier, $.type_identifier)),
 				optional(seq(":", field("pattern", $.pattern))),
 			),
 
@@ -815,6 +930,30 @@ module.exports = grammar({
 					),
 				),
 				"]",
+			),
+
+		// ========================================================================
+		// CONSTRAINT ANNOTATIONS
+		// ========================================================================
+		//
+		// `(ToText a, ToText b)` — a parenthesised list of trait constraints, each
+		// being a TypeIdent applied to a type variable identifier.
+		// The [$.constraint_list, $.paren_type] GLR conflict resolves `(Trait a)`
+		// as a constraint_list when followed by `=>`, or as a paren_type otherwise.
+
+		constraint_list: ($) =>
+			seq(
+				"(",
+				$.constraint,
+				repeat(seq(",", $.constraint)),
+				")",
+			),
+
+		// A single constraint: `TraitName typeVar`, e.g. `ToText a`.
+		constraint: ($) =>
+			seq(
+				field("trait", $.type_identifier),
+				field("var", $.identifier),
 			),
 
 		// ========================================================================
@@ -860,13 +999,20 @@ module.exports = grammar({
 
 		// _type_primary is INLINE. It lists the "atom" level of types.
 		// Lowercase identifiers here are type variables (e.g. `a` in `List a`).
+		// paren_type is factored out as a named rule so that the GLR conflict
+		// [$.constraint_list, $.paren_type] can reference it.
 		_type_primary: ($) =>
 			choice(
 				$.type_identifier,
 				$.identifier,
 				$.record_type,
-				seq("(", $.type, ")"),
+				$.paren_type,
 			),
+
+		// Parenthesised type: `(A -> B)`, `(List Num)`, etc.
+		// Named (not inline) so it can be referenced in the GLR conflict with
+		// constraint_list to resolve `(TypeIdent identifier)` ambiguity.
+		paren_type: ($) => seq("(", $.type, ")"),
 
 		// Record types use the same `{...}` syntax as record expressions and
 		// patterns but appear only in type position. Because types have their own
