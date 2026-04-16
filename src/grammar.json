@@ -253,8 +253,17 @@
                           "type": "FIELD",
                           "name": "constraints",
                           "content": {
-                            "type": "SYMBOL",
-                            "name": "constraint_list"
+                            "type": "CHOICE",
+                            "members": [
+                              {
+                                "type": "SYMBOL",
+                                "name": "constraint_list"
+                              },
+                              {
+                                "type": "SYMBOL",
+                                "name": "impl_constraint_list"
+                              }
+                            ]
                           }
                         },
                         {
@@ -459,11 +468,36 @@
           "value": "in"
         },
         {
+          "type": "CHOICE",
+          "members": [
+            {
+              "type": "SEQ",
+              "members": [
+                {
+                  "type": "FIELD",
+                  "name": "constraints",
+                  "content": {
+                    "type": "SYMBOL",
+                    "name": "impl_constraint_list"
+                  }
+                },
+                {
+                  "type": "STRING",
+                  "value": "=>"
+                }
+              ]
+            },
+            {
+              "type": "BLANK"
+            }
+          ]
+        },
+        {
           "type": "FIELD",
           "name": "type_name",
           "content": {
             "type": "SYMBOL",
-            "name": "type_identifier"
+            "name": "impl_target_type"
           }
         },
         {
@@ -480,6 +514,59 @@
         {
           "type": "STRING",
           "value": "}"
+        }
+      ]
+    },
+    "impl_target_type": {
+      "type": "PREC_LEFT",
+      "value": 0,
+      "content": {
+        "type": "SEQ",
+        "members": [
+          {
+            "type": "FIELD",
+            "name": "name",
+            "content": {
+              "type": "SYMBOL",
+              "name": "type_identifier"
+            }
+          },
+          {
+            "type": "REPEAT",
+            "content": {
+              "type": "FIELD",
+              "name": "arg",
+              "content": {
+                "type": "SYMBOL",
+                "name": "_type_primary"
+              }
+            }
+          }
+        ]
+      }
+    },
+    "impl_constraint_list": {
+      "type": "SEQ",
+      "members": [
+        {
+          "type": "SYMBOL",
+          "name": "constraint"
+        },
+        {
+          "type": "REPEAT",
+          "content": {
+            "type": "SEQ",
+            "members": [
+              {
+                "type": "STRING",
+                "value": ","
+              },
+              {
+                "type": "SYMBOL",
+                "name": "constraint"
+              }
+            ]
+          }
         }
       ]
     },
@@ -2306,12 +2393,6 @@
       "field_initializer"
     ],
     [
-      "type_definition"
-    ],
-    [
-      "variant"
-    ],
-    [
       "_atom",
       "variant_expr"
     ],
@@ -2320,10 +2401,6 @@
     ],
     [
       "match_in_expr"
-    ],
-    [
-      "constraint_list",
-      "paren_type"
     ],
     [
       "constraint",

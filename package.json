@@ -13,7 +13,7 @@
         "lume"
       ],
       "highlights": [
-        "../../languages/Lume/highlights.scm"
+        "queries/highlights.scm"
       ]
     }
   ]

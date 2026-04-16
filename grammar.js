@@ -162,18 +162,8 @@ module.exports = grammar({
 		// (field_initializer) until it sees `->` or not after the enclosing `}`.
 		[$.field_pattern, $.field_initializer],
 
-		// -- type_definition self-conflict -------------------------------------
-		// `type Foo = | A | B` - after seeing `| A`, should the repeat1 continue
-		// (another variant) or is the type definition done? The GLR fork keeps
-		// both; the one where `| B` is also a valid variant wins.
-		[$.type_definition],
-
-		// -- variant self-conflict ---------------------------------------------
-		// A variant may optionally carry a record_type payload: `Circle { r: Num }`.
-		// When the parser sees `TypeIdent` it forks: one branch tries to consume
-		// `{ ... }` as the payload, one stops. Whichever fits the surrounding rule
-		// wins.
-		[$.variant],
+		// NOTE: type_definition and variant previously had self-conflicts declared
+		// here, but tree-sitter resolved them via precedence automatically.
 
 		// -- _atom vs variant_expr ---------------------------------------------
 		// `TypeIdent` can end an `_atom` (type_identifier) OR be the start of a
@@ -201,13 +191,11 @@ module.exports = grammar({
 
 		// -- constraint_list vs paren_type -------------------------------------
 		// `( TypeIdent identifier )` is ambiguous: it could be a single-constraint
-		// list `(Trait a)` (if `=>` follows) or a parenthesised type `(List a)`
-		// (if `->` or another type-level token follows). GLR forks at `(` and
-		// resolves on the token after `)`: `=>` → constraint_list wins; anything
-		// else → paren_type wins.
+		// list `(Trait a)` (if `=>` follows) or a parenthesised type `(List a)`.
+		// NOTE: tree-sitter resolves this automatically via prec.left on
+		// impl_target_type, but kept for documentation.
 		// The secondary conflict between `constraint` and `type_apply` handles
 		// the inner `TypeIdent identifier` sequence, which is valid in both rules.
-		[$.constraint_list, $.paren_type],
 		[$.constraint, $._type_primary],
 	],
 
@@ -294,13 +282,20 @@ module.exports = grammar({
 				"let",
 				field("pattern", $.pattern),
 				// `:` signals a type annotation. The type annotation may be prefixed
-				// with a constraint list: `(ToText a, ToText b) => a -> b -> Text`.
+				// with a constraint list: `(ToText a, ToText b) => a -> b -> Text`
+				// or unparenthesized: `ToText a => a -> Text`.
 				// After `(`, GLR forks: one branch tries constraint_list (resolved
 				// if `=>` follows `)`) and one tries paren_type. The
 				// [$.constraint_list, $.paren_type] conflict handles this.
+				// The unparenthesized form uses impl_constraint_list which conflicts
+				// with the type itself (TypeIdent identifier could be a constraint
+				// or a type_apply).
 				optional(seq(
 					":",
-					optional(seq(field("constraints", $.constraint_list), "=>")),
+					optional(seq(
+						field("constraints", choice($.constraint_list, $.impl_constraint_list)),
+						"=>",
+					)),
 					field("type", $.type),
 				)),
 				"=",
@@ -348,16 +343,39 @@ module.exports = grammar({
 			),
 
 		// `use Trait in Type { let method = expr }` — provides a trait instance.
+		// Supports applied types: `use Show in Box Num { ... }`
+		// Supports constrained impls: `use Show in Show a => List a { ... }`
 		// Disambiguated from use_declaration by the uppercase TypeIdent after `use`.
 		impl_definition: ($) =>
 			seq(
 				"use",
 				field("trait", $.type_identifier),
 				"in",
-				field("type_name", $.type_identifier),
+				optional(seq(field("constraints", $.impl_constraint_list), "=>")),
+				field("type_name", $.impl_target_type),
 				"{",
 				repeat($.impl_method),
 				"}",
+			),
+
+		// The target type of an impl: a simple type name or an applied type.
+		// Examples: `Num`, `Box Num`, `List a`
+		// We restrict this to type_identifier with optional arguments (not full
+		// types like function types) since impl targets are always concrete or
+		// applied types. Uses prec.left to prefer reducing when `{` follows
+		// rather than trying to consume more arguments.
+		impl_target_type: ($) =>
+			prec.left(seq(
+				field("name", $.type_identifier),
+				repeat(field("arg", $._type_primary)),
+			)),
+
+		// Constraint list for impl definitions: `Show a` or `Show a, Eq a`
+		// Unlike binding constraints, these are unparenthesized.
+		impl_constraint_list: ($) =>
+			seq(
+				$.constraint,
+				repeat(seq(",", $.constraint)),
 			),
 
 		// An impl method: `let name = body` or `let name : Type = body`.

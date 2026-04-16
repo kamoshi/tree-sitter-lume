@@ -382,6 +382,10 @@
           {
             "type": "constraint_list",
             "named": true
+          },
+          {
+            "type": "impl_constraint_list",
+            "named": true
           }
         ]
       },
@@ -922,9 +926,34 @@
     }
   },
   {
+    "type": "impl_constraint_list",
+    "named": true,
+    "fields": {},
+    "children": {
+      "multiple": true,
+      "required": true,
+      "types": [
+        {
+          "type": "constraint",
+          "named": true
+        }
+      ]
+    }
+  },
+  {
     "type": "impl_definition",
     "named": true,
     "fields": {
+      "constraints": {
+        "multiple": false,
+        "required": false,
+        "types": [
+          {
+            "type": "impl_constraint_list",
+            "named": true
+          }
+        ]
+      },
       "trait": {
         "multiple": false,
         "required": true,
@@ -940,7 +969,7 @@
         "required": true,
         "types": [
           {
-            "type": "type_identifier",
+            "type": "impl_target_type",
             "named": true
           }
         ]
@@ -1055,6 +1084,44 @@
         "types": [
           {
             "type": "type",
+            "named": true
+          }
+        ]
+      }
+    }
+  },
+  {
+    "type": "impl_target_type",
+    "named": true,
+    "fields": {
+      "arg": {
+        "multiple": true,
+        "required": false,
+        "types": [
+          {
+            "type": "identifier",
+            "named": true
+          },
+          {
+            "type": "paren_type",
+            "named": true
+          },
+          {
+            "type": "record_type",
+            "named": true
+          },
+          {
+            "type": "type_identifier",
+            "named": true
+          }
+        ]
+      },
+      "name": {
+        "multiple": false,
+        "required": true,
+        "types": [
+          {
+            "type": "type_identifier",
             "named": true
           }
         ]
