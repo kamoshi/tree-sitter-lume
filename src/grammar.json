@@ -58,8 +58,26 @@
       ]
     },
     "comment": {
-      "type": "PATTERN",
-      "value": "--.*"
+      "type": "TOKEN",
+      "content": {
+        "type": "PREC",
+        "value": -1,
+        "content": {
+          "type": "PATTERN",
+          "value": "--.*"
+        }
+      }
+    },
+    "doc_comment": {
+      "type": "TOKEN",
+      "content": {
+        "type": "PREC",
+        "value": 1,
+        "content": {
+          "type": "PATTERN",
+          "value": "---.*"
+        }
+      }
     },
     "use_declaration": {
       "type": "SEQ",
@@ -205,16 +223,37 @@
           "members": [
             {
               "type": "FIELD",
-              "name": "fields",
+              "name": "wraps",
               "content": {
                 "type": "SYMBOL",
-                "name": "record_type"
+                "name": "_variant_type"
               }
             },
             {
               "type": "BLANK"
             }
           ]
+        }
+      ]
+    },
+    "_variant_type": {
+      "type": "CHOICE",
+      "members": [
+        {
+          "type": "SYMBOL",
+          "name": "record_type"
+        },
+        {
+          "type": "SYMBOL",
+          "name": "type_identifier"
+        },
+        {
+          "type": "SYMBOL",
+          "name": "identifier"
+        },
+        {
+          "type": "SYMBOL",
+          "name": "paren_type"
         }
       ]
     },
@@ -518,32 +557,45 @@
       ]
     },
     "impl_target_type": {
-      "type": "PREC_LEFT",
-      "value": 0,
-      "content": {
-        "type": "SEQ",
-        "members": [
-          {
-            "type": "FIELD",
-            "name": "name",
-            "content": {
-              "type": "SYMBOL",
-              "name": "type_identifier"
-            }
-          },
-          {
-            "type": "REPEAT",
-            "content": {
-              "type": "FIELD",
-              "name": "arg",
-              "content": {
-                "type": "SYMBOL",
-                "name": "_type_primary"
-              }
-            }
+      "type": "CHOICE",
+      "members": [
+        {
+          "type": "FIELD",
+          "name": "record",
+          "content": {
+            "type": "SYMBOL",
+            "name": "record_type"
           }
-        ]
-      }
+        },
+        {
+          "type": "PREC_LEFT",
+          "value": 0,
+          "content": {
+            "type": "SEQ",
+            "members": [
+              {
+                "type": "FIELD",
+                "name": "name",
+                "content": {
+                  "type": "SYMBOL",
+                  "name": "type_identifier"
+                }
+              },
+              {
+                "type": "REPEAT",
+                "content": {
+                  "type": "FIELD",
+                  "name": "arg",
+                  "content": {
+                    "type": "SYMBOL",
+                    "name": "_type_primary"
+                  }
+                }
+              }
+            ]
+          }
+        }
+      ]
     },
     "impl_constraint_list": {
       "type": "SEQ",
@@ -866,6 +918,10 @@
         },
         {
           "type": "SYMBOL",
+          "name": "unary_expr"
+        },
+        {
+          "type": "SYMBOL",
           "name": "apply"
         },
         {
@@ -877,6 +933,49 @@
           "name": "_atom"
         }
       ]
+    },
+    "unary_expr": {
+      "type": "PREC",
+      "value": 11,
+      "content": {
+        "type": "CHOICE",
+        "members": [
+          {
+            "type": "SEQ",
+            "members": [
+              {
+                "type": "STRING",
+                "value": "not"
+              },
+              {
+                "type": "FIELD",
+                "name": "operand",
+                "content": {
+                  "type": "SYMBOL",
+                  "name": "_binary_expr"
+                }
+              }
+            ]
+          },
+          {
+            "type": "SEQ",
+            "members": [
+              {
+                "type": "STRING",
+                "value": "-"
+              },
+              {
+                "type": "FIELD",
+                "name": "operand",
+                "content": {
+                  "type": "SYMBOL",
+                  "name": "_binary_expr"
+                }
+              }
+            ]
+          }
+        ]
+      }
     },
     "pipe_expr": {
       "type": "CHOICE",
@@ -1434,8 +1533,12 @@
           "name": "identifier"
         },
         {
-          "type": "SYMBOL",
-          "name": "type_identifier"
+          "type": "PREC",
+          "value": 2,
+          "content": {
+            "type": "SYMBOL",
+            "name": "type_identifier"
+          }
         },
         {
           "type": "SYMBOL",
@@ -1460,6 +1563,10 @@
         {
           "type": "SYMBOL",
           "name": "paren_expr"
+        },
+        {
+          "type": "SYMBOL",
+          "name": "hole"
         }
       ]
     },
@@ -1506,25 +1613,29 @@
       }
     },
     "variant_expr": {
-      "type": "SEQ",
-      "members": [
-        {
-          "type": "FIELD",
-          "name": "name",
-          "content": {
-            "type": "SYMBOL",
-            "name": "type_identifier"
+      "type": "PREC",
+      "value": 2,
+      "content": {
+        "type": "SEQ",
+        "members": [
+          {
+            "type": "FIELD",
+            "name": "name",
+            "content": {
+              "type": "SYMBOL",
+              "name": "type_identifier"
+            }
+          },
+          {
+            "type": "FIELD",
+            "name": "fields",
+            "content": {
+              "type": "SYMBOL",
+              "name": "record_expr"
+            }
           }
-        },
-        {
-          "type": "FIELD",
-          "name": "fields",
-          "content": {
-            "type": "SYMBOL",
-            "name": "record_expr"
-          }
-        }
-      ]
+        ]
+      }
     },
     "paren_expr": {
       "type": "SEQ",
@@ -1542,6 +1653,10 @@
           "value": ")"
         }
       ]
+    },
+    "hole": {
+      "type": "STRING",
+      "value": "_"
     },
     "if_expr": {
       "type": "SEQ",
@@ -2289,8 +2404,26 @@
                   "type": "CHOICE",
                   "members": [
                     {
-                      "type": "STRING",
-                      "value": ","
+                      "type": "CHOICE",
+                      "members": [
+                        {
+                          "type": "SEQ",
+                          "members": [
+                            {
+                              "type": "STRING",
+                              "value": ","
+                            },
+                            {
+                              "type": "STRING",
+                              "value": ".."
+                            }
+                          ]
+                        },
+                        {
+                          "type": "STRING",
+                          "value": ","
+                        }
+                      ]
                     },
                     {
                       "type": "BLANK"
@@ -2373,12 +2506,20 @@
     {
       "type": "SYMBOL",
       "name": "comment"
+    },
+    {
+      "type": "SYMBOL",
+      "name": "doc_comment"
     }
   ],
   "conflicts": [
     [
       "pattern",
       "_atom"
+    ],
+    [
+      "_atom",
+      "variant_expr"
     ],
     [
       "record_pattern",
@@ -2394,7 +2535,8 @@
     ],
     [
       "_atom",
-      "variant_expr"
+      "variant_expr",
+      "pattern"
     ],
     [
       "match_expr"
@@ -2405,6 +2547,10 @@
     [
       "constraint",
       "_type_primary"
+    ],
+    [
+      "hole",
+      "pattern"
     ]
   ],
   "precedences": [],

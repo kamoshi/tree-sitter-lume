@@ -16,6 +16,10 @@
             "named": true
           },
           {
+            "type": "hole",
+            "named": true
+          },
+          {
             "type": "identifier",
             "named": true
           },
@@ -67,6 +71,10 @@
           },
           {
             "type": "field_access",
+            "named": true
+          },
+          {
+            "type": "hole",
             "named": true
           },
           {
@@ -130,6 +138,10 @@
             "named": true
           },
           {
+            "type": "hole",
+            "named": true
+          },
+          {
             "type": "identifier",
             "named": true
           },
@@ -163,6 +175,10 @@
           },
           {
             "type": "type_identifier",
+            "named": true
+          },
+          {
+            "type": "unary_expr",
             "named": true
           },
           {
@@ -250,6 +266,10 @@
             "named": true
           },
           {
+            "type": "hole",
+            "named": true
+          },
+          {
             "type": "identifier",
             "named": true
           },
@@ -286,6 +306,10 @@
             "named": true
           },
           {
+            "type": "unary_expr",
+            "named": true
+          },
+          {
             "type": "variant_expr",
             "named": true
           }
@@ -315,6 +339,10 @@
           },
           {
             "type": "field_access",
+            "named": true
+          },
+          {
+            "type": "hole",
             "named": true
           },
           {
@@ -367,6 +395,10 @@
           },
           {
             "type": "type_identifier",
+            "named": true
+          },
+          {
+            "type": "unary_expr",
             "named": true
           },
           {
@@ -519,6 +551,10 @@
             "named": true
           },
           {
+            "type": "hole",
+            "named": true
+          },
+          {
             "type": "identifier",
             "named": true
           },
@@ -568,6 +604,10 @@
           },
           {
             "type": "type_identifier",
+            "named": true
+          },
+          {
+            "type": "unary_expr",
             "named": true
           },
           {
@@ -659,6 +699,10 @@
           "named": true
         },
         {
+          "type": "hole",
+          "named": true
+        },
+        {
           "type": "identifier",
           "named": true
         },
@@ -695,11 +739,20 @@
           "named": true
         },
         {
+          "type": "unary_expr",
+          "named": true
+        },
+        {
           "type": "variant_expr",
           "named": true
         }
       ]
     }
+  },
+  {
+    "type": "hole",
+    "named": true,
+    "fields": {}
   },
   {
     "type": "if_expr",
@@ -723,6 +776,10 @@
           },
           {
             "type": "field_access",
+            "named": true
+          },
+          {
+            "type": "hole",
             "named": true
           },
           {
@@ -759,6 +816,10 @@
           },
           {
             "type": "type_identifier",
+            "named": true
+          },
+          {
+            "type": "unary_expr",
             "named": true
           },
           {
@@ -788,6 +849,10 @@
             "named": true
           },
           {
+            "type": "hole",
+            "named": true
+          },
+          {
             "type": "identifier",
             "named": true
           },
@@ -837,6 +902,10 @@
           },
           {
             "type": "type_identifier",
+            "named": true
+          },
+          {
+            "type": "unary_expr",
             "named": true
           },
           {
@@ -866,6 +935,10 @@
             "named": true
           },
           {
+            "type": "hole",
+            "named": true
+          },
+          {
             "type": "identifier",
             "named": true
           },
@@ -915,6 +988,10 @@
           },
           {
             "type": "type_identifier",
+            "named": true
+          },
+          {
+            "type": "unary_expr",
             "named": true
           },
           {
@@ -1011,6 +1088,10 @@
             "named": true
           },
           {
+            "type": "hole",
+            "named": true
+          },
+          {
             "type": "identifier",
             "named": true
           },
@@ -1060,6 +1141,10 @@
           },
           {
             "type": "type_identifier",
+            "named": true
+          },
+          {
+            "type": "unary_expr",
             "named": true
           },
           {
@@ -1118,10 +1203,20 @@
       },
       "name": {
         "multiple": false,
-        "required": true,
+        "required": false,
         "types": [
           {
             "type": "type_identifier",
+            "named": true
+          }
+        ]
+      },
+      "record": {
+        "multiple": false,
+        "required": false,
+        "types": [
+          {
+            "type": "record_type",
             "named": true
           }
         ]
@@ -1150,6 +1245,10 @@
           },
           {
             "type": "field_access",
+            "named": true
+          },
+          {
+            "type": "hole",
             "named": true
           },
           {
@@ -1202,6 +1301,10 @@
           },
           {
             "type": "type_identifier",
+            "named": true
+          },
+          {
+            "type": "unary_expr",
             "named": true
           },
           {
@@ -1247,6 +1350,10 @@
             "named": true
           },
           {
+            "type": "hole",
+            "named": true
+          },
+          {
             "type": "identifier",
             "named": true
           },
@@ -1296,6 +1403,10 @@
           },
           {
             "type": "type_identifier",
+            "named": true
+          },
+          {
+            "type": "unary_expr",
             "named": true
           },
           {
@@ -1345,6 +1456,10 @@
             "named": true
           },
           {
+            "type": "hole",
+            "named": true
+          },
+          {
             "type": "identifier",
             "named": true
           },
@@ -1397,6 +1512,10 @@
             "named": true
           },
           {
+            "type": "unary_expr",
+            "named": true
+          },
+          {
             "type": "variant_expr",
             "named": true
           }
@@ -1426,6 +1545,10 @@
         },
         {
           "type": "field_access",
+          "named": true
+        },
+        {
+          "type": "hole",
           "named": true
         },
         {
@@ -1481,6 +1604,10 @@
           "named": true
         },
         {
+          "type": "unary_expr",
+          "named": true
+        },
+        {
           "type": "variant_expr",
           "named": true
         }
@@ -1528,6 +1655,10 @@
           },
           {
             "type": "field_access",
+            "named": true
+          },
+          {
+            "type": "hole",
             "named": true
           },
           {
@@ -1580,6 +1711,10 @@
           },
           {
             "type": "type_identifier",
+            "named": true
+          },
+          {
+            "type": "unary_expr",
             "named": true
           },
           {
@@ -1650,6 +1785,10 @@
             "named": true
           },
           {
+            "type": "hole",
+            "named": true
+          },
+          {
             "type": "identifier",
             "named": true
           },
@@ -1683,6 +1822,10 @@
           },
           {
             "type": "type_identifier",
+            "named": true
+          },
+          {
+            "type": "unary_expr",
             "named": true
           },
           {
@@ -1725,6 +1868,10 @@
         },
         {
           "type": "field_access",
+          "named": true
+        },
+        {
+          "type": "hole",
           "named": true
         },
         {
@@ -1777,6 +1924,10 @@
         },
         {
           "type": "type_identifier",
+          "named": true
+        },
+        {
+          "type": "unary_expr",
           "named": true
         },
         {
@@ -1882,6 +2033,10 @@
             "named": true
           },
           {
+            "type": "hole",
+            "named": true
+          },
+          {
             "type": "identifier",
             "named": true
           },
@@ -1915,6 +2070,10 @@
           },
           {
             "type": "type_identifier",
+            "named": true
+          },
+          {
+            "type": "unary_expr",
             "named": true
           },
           {
@@ -1944,6 +2103,10 @@
             "named": true
           },
           {
+            "type": "hole",
+            "named": true
+          },
+          {
             "type": "identifier",
             "named": true
           },
@@ -1977,6 +2140,10 @@
           },
           {
             "type": "type_identifier",
+            "named": true
+          },
+          {
+            "type": "unary_expr",
             "named": true
           },
           {
@@ -2014,6 +2181,10 @@
         },
         {
           "type": "field_access",
+          "named": true
+        },
+        {
+          "type": "hole",
           "named": true
         },
         {
@@ -2081,6 +2252,10 @@
           "named": true
         },
         {
+          "type": "unary_expr",
+          "named": true
+        },
+        {
           "type": "use_declaration",
           "named": true
         },
@@ -2113,6 +2288,10 @@
           },
           {
             "type": "field_access",
+            "named": true
+          },
+          {
+            "type": "hole",
             "named": true
           },
           {
@@ -2149,6 +2328,10 @@
           },
           {
             "type": "type_identifier",
+            "named": true
+          },
+          {
+            "type": "unary_expr",
             "named": true
           },
           {
@@ -2420,6 +2603,82 @@
     }
   },
   {
+    "type": "unary_expr",
+    "named": true,
+    "fields": {
+      "operand": {
+        "multiple": false,
+        "required": true,
+        "types": [
+          {
+            "type": "apply",
+            "named": true
+          },
+          {
+            "type": "binary_expr",
+            "named": true
+          },
+          {
+            "type": "bool",
+            "named": true
+          },
+          {
+            "type": "field_access",
+            "named": true
+          },
+          {
+            "type": "hole",
+            "named": true
+          },
+          {
+            "type": "identifier",
+            "named": true
+          },
+          {
+            "type": "if_expr",
+            "named": true
+          },
+          {
+            "type": "list_expr",
+            "named": true
+          },
+          {
+            "type": "number",
+            "named": true
+          },
+          {
+            "type": "paren_expr",
+            "named": true
+          },
+          {
+            "type": "pipe_expr",
+            "named": true
+          },
+          {
+            "type": "record_expr",
+            "named": true
+          },
+          {
+            "type": "string",
+            "named": true
+          },
+          {
+            "type": "type_identifier",
+            "named": true
+          },
+          {
+            "type": "unary_expr",
+            "named": true
+          },
+          {
+            "type": "variant_expr",
+            "named": true
+          }
+        ]
+      }
+    }
+  },
+  {
     "type": "use_declaration",
     "named": true,
     "fields": {
@@ -2459,20 +2718,32 @@
     "type": "variant",
     "named": true,
     "fields": {
-      "fields": {
-        "multiple": false,
-        "required": false,
-        "types": [
-          {
-            "type": "record_type",
-            "named": true
-          }
-        ]
-      },
       "name": {
         "multiple": false,
         "required": true,
         "types": [
+          {
+            "type": "type_identifier",
+            "named": true
+          }
+        ]
+      },
+      "wraps": {
+        "multiple": false,
+        "required": false,
+        "types": [
+          {
+            "type": "identifier",
+            "named": true
+          },
+          {
+            "type": "paren_type",
+            "named": true
+          },
+          {
+            "type": "record_type",
+            "named": true
+          },
           {
             "type": "type_identifier",
             "named": true
@@ -2617,6 +2888,11 @@
     "extra": true
   },
   {
+    "type": "doc_comment",
+    "named": true,
+    "extra": true
+  },
+  {
     "type": "else",
     "named": false
   },
@@ -2642,6 +2918,10 @@
   },
   {
     "type": "match",
+    "named": false
+  },
+  {
+    "type": "not",
     "named": false
   },
   {

@@ -120,7 +120,7 @@ module.exports = grammar({
 	// `skipWhitespace()` at the start of every rule or in the lexer. In
 	// tree-sitter `extras` registers patterns that the automaton silently
 	// consumes (and attaches as children) at any point.
-	extras: ($) => [/\s/, $.comment],
+	extras: ($) => [/\s/, $.comment, $.doc_comment],
 
 	// ==========================================================================
 	// CONFLICTS - where GLR is required
@@ -138,13 +138,16 @@ module.exports = grammar({
 	// rules share the same prefix AND there is no single token that resolves the
 	// ambiguity before the prefix is fully consumed.
 	conflicts: ($) => [
-		// -- pattern vs _atom ---------------------------------------------------
-		// `identifier`, `number`, `string`, `bool`, and `TypeIdent` all appear in
-		// both `pattern` and `_atom`. When the parser sees `n ->`, it cannot know
-		// until it reaches `->` whether `n` is a lambda pattern or an expression.
-		// GLR forks: one branch assumes pattern (for lambda), one assumes atom
-		// (for an expression). The branch that reaches `->` in a valid state wins.
+		// -- pattern vs _atom (non-TypeIdent tokens) ------------------------------
+		// `identifier`, `number`, `string`, `bool` appear in both `pattern` and
+		// `_atom`. The TypeIdent case is now handled by the 3-way conflict above.
+		// This conflict handles the remaining shared tokens.
 		[$.pattern, $._atom],
+
+		// -- _atom vs variant_expr (non-pattern contexts) ----------------------
+		// In contexts where pattern isn't valid, `TypeIdent { ... }` still needs
+		// GLR to decide between atom (type_identifier) and variant_expr.
+		[$._atom, $.variant_expr],
 
 		// -- record_pattern vs record_expr -------------------------------------
 		// Both start with `{`. An RD parser would peek at the character after the
@@ -165,11 +168,13 @@ module.exports = grammar({
 		// NOTE: type_definition and variant previously had self-conflicts declared
 		// here, but tree-sitter resolved them via precedence automatically.
 
-		// -- _atom vs variant_expr ---------------------------------------------
-		// `TypeIdent` can end an `_atom` (type_identifier) OR be the start of a
-		// `variant_expr` (TypeIdent followed by `{ ... }`). The fork resolves on the
-		// next token: if `{` arrives, variant_expr wins; otherwise type_identifier.
-		[$._atom, $.variant_expr],
+		// -- _atom vs variant_expr vs pattern -----------------------------------
+		// `TypeIdent` can be an `_atom` (type_identifier), the start of a
+		// `variant_expr` (TypeIdent `{...}`), or the start of a variant pattern
+		// (TypeIdent followed by a sub-pattern). All three share prec(2) so
+		// GLR forks all paths: `{` resolves variant_expr vs atom, and `->` later
+		// resolves pattern vs expression.
+		[$._atom, $.variant_expr, $.pattern],
 
 		// -- match_expr self-conflict -------------------------------------------
 		// After an arm body, `|` can mean:
@@ -197,6 +202,12 @@ module.exports = grammar({
 		// The secondary conflict between `constraint` and `type_apply` handles
 		// the inner `TypeIdent identifier` sequence, which is valid in both rules.
 		[$.constraint, $._type_primary],
+
+		// -- hole vs pattern (wildcard) ----------------------------------------
+		// `_` is both a typed hole in expression position and a wildcard in
+		// pattern position. The same ambiguity as [$.pattern, $._atom] — resolved
+		// when context clarifies (e.g., `->` after means pattern/wildcard).
+		[$.hole, $.pattern],
 	],
 
 	rules: {
@@ -232,7 +243,14 @@ module.exports = grammar({
 		// (longest match). Because comment is in `extras`, the automaton eats
 		// comments between any two tokens without any grammar rule needing to
 		// account for them.
-		comment: ($) => /--.*/,
+		// Doc comments `---` are a separate rule with higher priority.
+		comment: ($) => token(prec(-1, /--.*/)),
+
+		// Doc comments use three dashes `---`. They are also in `extras` so they
+		// can appear between any two tokens and are preserved in the syntax tree.
+		// The compiler attaches them to the following declaration.
+		// Higher priority than regular comments so `---` is always doc_comment.
+		doc_comment: ($) => token(prec(1, /---.*/)),
 
 		// ========================================================================
 		// DECLARATIONS
@@ -268,14 +286,21 @@ module.exports = grammar({
 				repeat(seq("|", field("variant", $.variant))),
 			),
 
-		// A variant is a TypeIdent with an optional record_type payload.
-		// `[$.variant]` in conflicts allows GLR to fork on whether `{` starts a
-		// payload or belongs to something following the type definition.
+		// A variant is a TypeIdent with an optional wrapped type.
+		// After the recent unification, variants can wrap ANY type — a record type
+		// (`Circle { radius: Num }`), a named type (`Some a`, `Box (List a)`), or
+		// a type variable (`Leaf a`). Unit variants have no type argument.
 		variant: ($) =>
 			seq(
 				field("name", $.type_identifier),
-				optional(field("fields", $.record_type)),
+				optional(field("wraps", $._variant_type)),
 			),
+
+		// Helper for the type that a variant wraps. Restricted to non-function
+		// types (record_type, type_identifier, identifier, paren_type) because
+		// function types in variant position require parentheses.
+		_variant_type: ($) =>
+			choice($.record_type, $.type_identifier, $.identifier, $.paren_type),
 
 		binding: ($) =>
 			seq(
@@ -358,17 +383,20 @@ module.exports = grammar({
 				"}",
 			),
 
-		// The target type of an impl: a simple type name or an applied type.
-		// Examples: `Num`, `Box Num`, `List a`
-		// We restrict this to type_identifier with optional arguments (not full
-		// types like function types) since impl targets are always concrete or
-		// applied types. Uses prec.left to prefer reducing when `{` follows
+		// The target type of an impl: a simple type name, an applied type, or a
+		// record type.
+		// Examples: `Num`, `Box Num`, `List a`, `{ name: Text, age: Num }`
+		// Record type targets were added to support trait impls for closed records.
+		// Uses prec.left to prefer reducing when `{` follows for named targets
 		// rather than trying to consume more arguments.
 		impl_target_type: ($) =>
-			prec.left(seq(
-				field("name", $.type_identifier),
-				repeat(field("arg", $._type_primary)),
-			)),
+			choice(
+				field("record", $.record_type),
+				prec.left(seq(
+					field("name", $.type_identifier),
+					repeat(field("arg", $._type_primary)),
+				)),
+			),
 
 		// Constraint list for impl definitions: `Show a` or `Show a, Eq a`
 		// Unlike binding constraints, these are unparenthesized.
@@ -517,7 +545,18 @@ module.exports = grammar({
 		// precedence numbers, allowing all operators to live in one flat set of
 		// rules rather than nested function calls.
 		_binary_expr: ($) =>
-			choice($.pipe_expr, $.binary_expr, $.apply, $.record_expr, $._atom),
+			choice($.pipe_expr, $.binary_expr, $.unary_expr, $.apply, $.record_expr, $._atom),
+
+		// -- Unary operators ---------------------------------------------------
+		//
+		// `not x` and `-x`. In the compiler these have binding power 80 (higher
+		// than all binary operators). prec(11) places them above FIELD (10) in
+		// the tree-sitter precedence table.
+		unary_expr: ($) =>
+			prec(11, choice(
+				seq("not", field("operand", $._binary_expr)),
+				seq("-", field("operand", $._binary_expr)),
+			)),
 
 		// -- Pipe operators ----------------------------------------------------
 		//
@@ -738,13 +777,18 @@ module.exports = grammar({
 				$.field_access,
 				$.variant_expr,
 				$.identifier,
-				$.type_identifier,
+				// prec(2) matches the variant pattern's prec(2) so that GLR keeps
+				// both the expression and pattern forks alive. Without this, the
+				// pattern fork wins and `Some x` in expression context is
+				// misinterpreted as a variant pattern instead of apply(Some, x).
+				prec(2, $.type_identifier),
 				$.number,
 				$.string,
 				$.bool,
 				$.list_expr,
 				$.if_expr,
 				$.paren_expr,
+				$.hole,
 			),
 
 		// -- Field access -----------------------------------------------------
@@ -762,23 +806,30 @@ module.exports = grammar({
 				),
 			),
 
-		// -- Variant construction ---------------------------------------------
+		// -- Variant construction with record payload ----------------------------
 		//
-		// `Some { value: x }` - a TypeIdent immediately followed by a record_expr.
+		// `Circle { radius: 5 }` - a TypeIdent immediately followed by a record_expr.
 		// This is the only way `{` can appear inside an atom. The [$._atom,
 		// $.variant_expr] GLR conflict allows the automaton to fork when it sees
 		// TypeIdent: one branch tries to extend to variant_expr (shifts `{`), the
 		// other immediately reduces to type_identifier. If `{` arrives, variant_expr
 		// wins; otherwise type_identifier wins.
 		//
-		// Bare constructors (None, A, B, Fail) are just type_identifier atoms.
+		// Bare constructors (None, Some, etc.) are just type_identifier atoms.
+		// For wrapper variants like `Some 42`, the bare constructor `Some` is a
+		// type_identifier, and application (`Some 42`) is parsed as `apply`.
 		variant_expr: ($) =>
-			seq(field("name", $.type_identifier), field("fields", $.record_expr)),
+			prec(2, seq(field("name", $.type_identifier), field("fields", $.record_expr))),
 
 		// paren_expr has no explicit prec annotation because parentheses are
 		// self-delimiting: `(` and `)` bracket the content completely, leaving no
 		// ambiguity about where the expression ends.
 		paren_expr: ($) => seq("(", $._expr, ")"),
+
+		// Typed hole: `_` in expression position. The type checker infers and
+		// reports the expected type at this position as a diagnostic — useful for
+		// exploring what type the context expects while developing.
+		hole: ($) => "_",
 
 		// -- If-then-else -----------------------------------------------------
 		//
@@ -1033,9 +1084,9 @@ module.exports = grammar({
 		paren_type: ($) => seq("(", $.type, ")"),
 
 		// Record types use the same `{...}` syntax as record expressions and
-		// patterns but appear only in type position. Because types have their own
-		// grammar namespace (`type` vs `_expr`), there is no cross-context
-		// ambiguity - a `{` inside a type annotation is unambiguously record_type.
+		// patterns but appear only in type position. Supports open rows with `..`
+		// for row polymorphism: `{ name: Text, .. }` means "any record with at
+		// least a `name: Text` field".
 		record_type: ($) =>
 			seq(
 				"{",
@@ -1043,7 +1094,12 @@ module.exports = grammar({
 					seq(
 						$.field_type,
 						repeat(seq(",", $.field_type)),
-						optional(","), // trailing comma for consistency
+						optional(
+							choice(
+								seq(",", ".."), // open row: `{ name: Text, .. }`
+								",", // trailing comma only
+							),
+						),
 					),
 				),
 				"}",
