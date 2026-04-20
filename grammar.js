@@ -210,6 +210,16 @@ module.exports = grammar({
 		// pattern position. The same ambiguity as [$.pattern, $._atom] — resolved
 		// when context clarifies (e.g., `->` after means pattern/wildcard).
 		[$.hole, $.pattern],
+
+		// -- pattern self-conflict (optional sub-pattern in variant) -----------
+		// `let TypeIdent { … }` is ambiguous with binding_param added:
+		//   (a) TypeIdent absorbs `{ … }` as its optional sub-pattern
+		//   (b) TypeIdent is reduced alone; `{ … }` is a record binding_param
+		//
+		// GLR forks the two reductions inside `pattern` itself. In contexts
+		// without binding_param (lambdas, match arms, let_in_expr) only fork (a)
+		// succeeds, so the ambiguity is harmless outside of `binding`.
+		[$.pattern],
 	],
 
 	rules: {
@@ -308,15 +318,30 @@ module.exports = grammar({
 			seq(
 				"let",
 				field("pattern", choice($.pattern, seq("(", $.operator_name, ")"))),
-				// `:` signals a type annotation. The type annotation may be prefixed
+				// ── Curried-function sugar ─────────────────────────────────────────
+				// `let f x y = body`          →  `let f = x -> y -> body`
+				// `let f (x: Num) y -> T = b` →  `let f : Num -> a -> T = x -> y -> b`
+				//
+				// Parameters accumulate via repeat until `=`, `:`, or `->` is seen.
+				// None of those tokens can start a Lume pattern, so the repeat
+				// terminates unambiguously once a non-pattern token appears.
+				//
+				// The [$.pattern, $.binding_param] GLR conflict handles the edge case
+				// where the initial pattern is a variant with an optional sub-pattern:
+				// `let Some x = b` — the automaton forks on whether `x` belongs to
+				// the pattern or is a param. Both produce valid CSTs for highlighting.
+				repeat(field("param", $.binding_param)),
+				// Optional return-type: `let f x -> Ret = body`.
+				// Only meaningful when at least one param is present. `->` cannot
+				// start a pattern, so this is unambiguous with the param repeat.
+				optional(seq("->", field("return_type", $.type))),
+				// ── Explicit type annotation (mutually exclusive with the above) ────
+				// `:` signals a type annotation. The annotation may be prefixed
 				// with a constraint list: `(ToText a, ToText b) => a -> b -> Text`
 				// or unparenthesized: `ToText a => a -> Text`.
 				// After `(`, GLR forks: one branch tries constraint_list (resolved
 				// if `=>` follows `)`) and one tries paren_type. The
 				// [$.constraint_list, $.paren_type] conflict handles this.
-				// The unparenthesized form uses impl_constraint_list which conflicts
-				// with the type itself (TypeIdent identifier could be a constraint
-				// or a type_apply).
 				optional(seq(
 					":",
 					optional(seq(
@@ -338,6 +363,23 @@ module.exports = grammar({
 					"=",
 					field("body", $._expr),
 				)),
+			),
+
+		// A sugared binding-head parameter.
+		//
+		// Two forms:
+		//   (pattern: Type)  — annotated: `let f (x: Num) y = body`
+		//   pattern          — plain:     `let f x y = body`
+		//
+		// The `(` token unambiguously starts the annotated form because plain
+		// Lume patterns never start with `(` (no paren-pattern exists). The `:`
+		// inside the parens further distinguishes this from the `(op)` operator-
+		// binding form (which has no `:`), as well as from paren expressions in
+		// the body (which come after `=`).
+		binding_param: ($) =>
+			choice(
+				seq("(", field("pattern", $.pattern), ":", field("type", $.type), ")"),
+				field("pattern", $.pattern),
 			),
 
 		// ========================================================================

@@ -445,6 +445,16 @@
           }
         ]
       },
+      "param": {
+        "multiple": true,
+        "required": false,
+        "types": [
+          {
+            "type": "binding_param",
+            "named": true
+          }
+        ]
+      },
       "pattern": {
         "multiple": true,
         "required": true,
@@ -467,8 +477,44 @@
           }
         ]
       },
+      "return_type": {
+        "multiple": false,
+        "required": false,
+        "types": [
+          {
+            "type": "type",
+            "named": true
+          }
+        ]
+      },
       "type": {
         "multiple": true,
+        "required": false,
+        "types": [
+          {
+            "type": "type",
+            "named": true
+          }
+        ]
+      }
+    }
+  },
+  {
+    "type": "binding_param",
+    "named": true,
+    "fields": {
+      "pattern": {
+        "multiple": false,
+        "required": true,
+        "types": [
+          {
+            "type": "pattern",
+            "named": true
+          }
+        ]
+      },
+      "type": {
+        "multiple": false,
         "required": false,
         "types": [
           {
