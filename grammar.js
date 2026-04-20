@@ -86,11 +86,12 @@ const PREC = {
 	OR: 3, // ||
 	AND: 4, // &&
 	COMPARE: 5, // ==, !=, <, >, <=, >=
-	CONCAT: 6, // ++
+	CONCAT: 6, // ++, custom operators (right-associative)
 	ADD: 7, // +, -
 	MUL: 8, // *, /
 	APPLY: 9, // f x y  - tighter than all binary operators
 	FIELD: 10, // a.b.c  - tightest, so f a.b parses as f (a.b) not (f a).b
+	UNARY: 11, // not, unary -
 };
 
 module.exports = grammar({
@@ -165,9 +166,6 @@ module.exports = grammar({
 		// (field_initializer) until it sees `->` or not after the enclosing `}`.
 		[$.field_pattern, $.field_initializer],
 
-		// NOTE: type_definition and variant previously had self-conflicts declared
-		// here, but tree-sitter resolved them via precedence automatically.
-
 		// -- _atom vs variant_expr vs pattern -----------------------------------
 		// `TypeIdent` can be an `_atom` (type_identifier), the start of a
 		// `variant_expr` (TypeIdent `{...}`), or the start of a variant pattern
@@ -175,6 +173,12 @@ module.exports = grammar({
 		// GLR forks all paths: `{` resolves variant_expr vs atom, and `->` later
 		// resolves pattern vs expression.
 		[$._atom, $.variant_expr, $.pattern],
+
+		// -- trait_call vs field_access ----------------------------------------
+		// Both can start with `TypeIdent .` — trait_call is `TypeIdent . ident`
+		// (one level), field_access is `TypeIdent . ident (. ident)*` (chain).
+		// GLR forks and resolves based on context.
+		[$.trait_call, $.field_access],
 
 		// -- match_expr self-conflict -------------------------------------------
 		// After an arm body, `|` can mean:
@@ -197,8 +201,6 @@ module.exports = grammar({
 		// -- constraint_list vs paren_type -------------------------------------
 		// `( TypeIdent identifier )` is ambiguous: it could be a single-constraint
 		// list `(Trait a)` (if `=>` follows) or a parenthesised type `(List a)`.
-		// NOTE: tree-sitter resolves this automatically via prec.left on
-		// impl_target_type, but kept for documentation.
 		// The secondary conflict between `constraint` and `type_apply` handles
 		// the inner `TypeIdent identifier` sequence, which is valid in both rules.
 		[$.constraint, $._type_primary],
@@ -305,7 +307,7 @@ module.exports = grammar({
 		binding: ($) =>
 			seq(
 				"let",
-				field("pattern", $.pattern),
+				field("pattern", choice($.pattern, seq("(", $.operator_name, ")"))),
 				// `:` signals a type annotation. The type annotation may be prefixed
 				// with a constraint list: `(ToText a, ToText b) => a -> b -> Text`
 				// or unparenthesized: `ToText a => a -> Text`.
@@ -356,12 +358,13 @@ module.exports = grammar({
 			),
 
 		// A trait method signature: `let toText : a -> Text`
+		// Also supports operator methods: `let (++) : a -> a -> a`
 		// Optional trailing comma allows both comma-separated and whitespace-
 		// separated styles inside the trait body.
 		trait_method: ($) =>
 			seq(
 				"let",
-				field("name", $.identifier),
+				field("name", choice($.identifier, seq("(", $.operator_name, ")"))),
 				":",
 				field("type", $.type),
 				optional(","),
@@ -407,11 +410,12 @@ module.exports = grammar({
 			),
 
 		// An impl method: `let name = body` or `let name : Type = body`.
+		// Also supports operator methods: `let (++) = body`.
 		// The optional type annotation matches the explicit-annotation form.
 		impl_method: ($) =>
 			seq(
 				"let",
-				field("name", $.identifier),
+				field("name", choice($.identifier, seq("(", $.operator_name, ")"))),
 				optional(seq(":", field("type", $.type))),
 				"=",
 				field("body", $._expr),
@@ -550,10 +554,10 @@ module.exports = grammar({
 		// -- Unary operators ---------------------------------------------------
 		//
 		// `not x` and `-x`. In the compiler these have binding power 80 (higher
-		// than all binary operators). prec(11) places them above FIELD (10) in
-		// the tree-sitter precedence table.
+		// than all binary operators). prec(UNARY=11) places them above FIELD (10)
+		// in the tree-sitter precedence table.
 		unary_expr: ($) =>
-			prec(11, choice(
+			prec(PREC.UNARY, choice(
 				seq("not", field("operand", $._binary_expr)),
 				seq("-", field("operand", $._binary_expr)),
 			)),
@@ -661,11 +665,22 @@ module.exports = grammar({
 						field("right", $._binary_expr),
 					),
 				),
-				prec.left(
+				prec.right(
 					PREC.CONCAT,
 					seq(
 						field("left", $._binary_expr),
 						field("op", "++"),
+						field("right", $._binary_expr),
+					),
+				),
+				// Custom operators (e.g. <>, >>=, <*>): same precedence as ++,
+				// right-associative. In the Lume Pratt parser these use binding
+				// power (50, 50), same as concat.
+				prec.right(
+					PREC.CONCAT,
+					seq(
+						field("left", $._binary_expr),
+						field("op", $.operator),
 						field("right", $._binary_expr),
 					),
 				),
@@ -775,6 +790,7 @@ module.exports = grammar({
 		_atom: ($) =>
 			choice(
 				$.field_access,
+				$.trait_call,
 				$.variant_expr,
 				$.identifier,
 				// prec(2) matches the variant pattern's prec(2) so that GLR keeps
@@ -806,6 +822,15 @@ module.exports = grammar({
 				),
 			),
 
+		// -- Trait method call -------------------------------------------------
+		//
+		// `Show.show` - a qualified trait method reference. The type checker
+		// resolves this to a concrete dictionary field access at the callsite.
+		// Distinguished from field_access by the TypeIdent (uppercase) on the
+		// left of the dot: field_access requires lowercase or paren_expr on left.
+		trait_call: ($) =>
+			seq(field("trait", $.type_identifier), ".", field("method", $.identifier)),
+
 		// -- Variant construction with record payload ----------------------------
 		//
 		// `Circle { radius: 5 }` - a TypeIdent immediately followed by a record_expr.
@@ -821,10 +846,15 @@ module.exports = grammar({
 		variant_expr: ($) =>
 			prec(2, seq(field("name", $.type_identifier), field("fields", $.record_expr))),
 
-		// paren_expr has no explicit prec annotation because parentheses are
-		// self-delimiting: `(` and `)` bracket the content completely, leaving no
-		// ambiguity about where the expression ends.
-		paren_expr: ($) => seq("(", $._expr, ")"),
+		// paren_expr: `(expr)` or `(op)` — parenthesised expression or
+		// operator-as-value. `(++)` evaluates to the operator function, allowing
+		// operators to be passed as arguments: `foldl (+) 0 xs`.
+		// No explicit prec needed: `(` and `)` are self-delimiting.
+		paren_expr: ($) =>
+			choice(
+				seq("(", $._expr, ")"),
+				seq("(", $.operator_name, ")"),
+			),
 
 		// Typed hole: `_` in expression position. The type checker infers and
 		// reports the expected type at this position as a diagnostic — useful for
@@ -854,18 +884,27 @@ module.exports = grammar({
 				field("else", $._expr),
 			),
 
+		// -- List expression with spread support ----------------------------------
+		//
+		// Lists support interleaved spread entries: `[..xs, 4, ..ys, 5]`
+		// `..expr` spreads the elements of `expr` into the new list at that
+		// position. Entries are applied left-to-right.
 		list_expr: ($) =>
 			seq(
 				"[",
 				optional(
 					seq(
-						$._expr,
-						repeat(seq(",", $._expr)),
+						$._list_entry,
+						repeat(seq(",", $._list_entry)),
 						optional(","), // trailing comma allowed
 					),
 				),
 				"]",
 			),
+
+		// A list entry is either a spread `..expr` or a plain element expression.
+		_list_entry: ($) =>
+			choice($.spread_entry, $._expr),
 
 		// -- Record expression -------------------------------------------------
 		//
@@ -875,43 +914,32 @@ module.exports = grammar({
 		//                   The apply ends at `f`. Then `{ x: 1 }` is a separate
 		//                   _binary_expr at the enclosing level. OK
 		//
-		// The update syntax `{ base | field: val }` uses $._binary_expr for the
-		// base (not $._expr) to prevent ambiguity: if base were $._expr, a lambda
-		// `x -> y | fields` would be ambiguous - is `|` a pipe-like or a record
-		// separator? Restricting base to _binary_expr (no lambdas) removes the
-		// ambiguity.
+		// Record entries can be fields or spreads in any order:
+		//   { ..base, x: 1, ..extra, y: 2 }
+		//
+		// Entries are applied left-to-right; later entries shadow earlier ones.
+		// At the type level, only fields AFTER the last open spread are
+		// "guaranteed" (always present regardless of what was spread).
 		record_expr: ($) =>
 			seq(
 				"{",
 				optional(
-					choice(
-						seq(
-							field("base", $._binary_expr),
-							"|",
-							field("fields", $.record_fields),
-						),
-						field("fields", $.record_fields),
+					seq(
+						$._record_entry,
+						repeat(seq(",", $._record_entry)),
+						optional(","), // trailing comma
 					),
 				),
 				"}",
 			),
 
-		// record_fields allows:
-		//   { a, b, c }         - plain fields
-		//   { a, b, c, }        - trailing comma (common in multi-line records)
-		//   { a, b, ..rest }    - named spread
-		//   { a, b, .. }        - anonymous spread
-		record_fields: ($) =>
-			seq(
-				$.field_initializer,
-				repeat(seq(",", $.field_initializer)),
-				optional(
-					choice(
-						seq(",", "..", optional($.identifier)), // spread
-						",", // trailing comma only
-					),
-				),
-			),
+		// A record entry is either a spread `..expr` or a field initializer.
+		_record_entry: ($) =>
+			choice($.spread_entry, $.field_initializer),
+
+		// `..expr` — spread an existing record or list into the new one.
+		// The `..` token is unambiguous (only appears in spread/rest positions).
+		spread_entry: ($) => seq("..", $._binary_expr),
 
 		// field_initializer: `name` (shorthand) or `name: value` (explicit).
 		// The name can be a lowercase identifier OR an uppercase type_identifier
@@ -1047,12 +1075,13 @@ module.exports = grammar({
 			),
 
 		// `List Num` -> type_apply(List, [Num]).
+		// `f a` -> type_apply(f, [a]) — higher-kinded type variable application.
 		// prec.left(PREC.APPLY) gives type application the same tight binding as
 		// value-level application, so `List Num -> Bool` parses as
 		// `(List Num) -> Bool`, not `List (Num -> Bool)`.
 		//
 		// Note: type_apply uses repeat1 rather than left-recursion because type
-		// application is always headed by a TypeIdent (capital letter) - there is
+		// application is always headed by a TypeIdent or type variable - there is
 		// no ambiguity with keywords. The repeat1 loop never accidentally absorbs
 		// keywords because `->` (a non-identifier token) terminates the loop
 		// deterministically. This is safe precisely because type expressions have
@@ -1061,7 +1090,7 @@ module.exports = grammar({
 			prec.left(
 				PREC.APPLY,
 				seq(
-					field("name", $.type_identifier),
+					field("name", choice($.type_identifier, $.identifier)),
 					repeat1(field("arg", $._type_primary)),
 				),
 			),
@@ -1141,5 +1170,25 @@ module.exports = grammar({
 		// `false` are always lexed as `bool` tokens, never as identifiers - even
 		// though they match /[a-z][a-zA-Z0-9_]*/.
 		bool: ($) => choice("true", "false"),
+
+		// Custom operators: sequences of operator characters that don't match any
+		// built-in operator. The Lume lexer greedily collects from the set
+		// `+ * / = ! < > | & ? $ # @ ^ ~` and classifies known sequences; anything
+		// else becomes a custom operator. Examples: <>, >>=, <*>, <=>, <|>, $, #.
+		//
+		// prec(-1) ensures built-in operator string literals (++, |>, etc.) always
+		// win over the regex when they match, but novel combinations lex as operator.
+		operator: ($) => token(prec(0, /[+*\/=!<>|&?$#@^~][+*\/=!<>|&?$#@^~]+/)),
+
+		// Parenthesized operator name — used in operator-as-value `(++)` and in
+		// trait/impl method definitions: `let (++) : a -> a -> a`.
+		// Enumerates all built-in operators plus the custom operator regex.
+		operator_name: ($) =>
+			choice(
+				"++", "+", "-", "*", "/",
+				"==", "!=", "<", ">", "<=", ">=",
+				"|>", "?>", "&&", "||",
+				$.operator,
+			),
 	},
 });
