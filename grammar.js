@@ -351,6 +351,11 @@ module.exports = grammar({
 			seq(
 				"let",
 				field("pattern", choice($.pattern, seq("(", $.operator_name, ")"))),
+				// ── Optional fixity annotation for operator bindings ────────────────
+				// `let (++) infixr 6 = …`  — declares associativity and precedence.
+				// Only meaningful when the pattern is an operator name; the grammar
+				// allows it everywhere for simplicity (the compiler validates usage).
+				optional(field("fixity", $.fixity_annotation)),
 				// ── Curried-function sugar ─────────────────────────────────────────
 				// `let f x y = body`          →  `let f = x -> y -> body`
 				// `let f (x: Num) y -> T = b` →  `let f : Num -> a -> T = x -> y -> b`

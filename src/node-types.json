@@ -445,6 +445,16 @@
           }
         ]
       },
+      "fixity": {
+        "multiple": false,
+        "required": false,
+        "types": [
+          {
+            "type": "fixity_annotation",
+            "named": true
+          }
+        ]
+      },
       "param": {
         "multiple": true,
         "required": false,
