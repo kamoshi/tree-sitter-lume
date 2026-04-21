@@ -410,6 +410,10 @@
             "named": true
           },
           {
+            "type": "sequence_expr",
+            "named": true
+          },
+          {
             "type": "string",
             "named": true
           },
@@ -700,6 +704,10 @@
           },
           {
             "type": "record_expr",
+            "named": true
+          },
+          {
+            "type": "sequence_expr",
             "named": true
           },
           {
@@ -1103,6 +1111,10 @@
             "named": true
           },
           {
+            "type": "sequence_expr",
+            "named": true
+          },
+          {
             "type": "string",
             "named": true
           },
@@ -1190,6 +1202,10 @@
           },
           {
             "type": "record_expr",
+            "named": true
+          },
+          {
+            "type": "sequence_expr",
             "named": true
           },
           {
@@ -1347,6 +1363,10 @@
           },
           {
             "type": "record_expr",
+            "named": true
+          },
+          {
+            "type": "sequence_expr",
             "named": true
           },
           {
@@ -1526,6 +1546,10 @@
             "named": true
           },
           {
+            "type": "sequence_expr",
+            "named": true
+          },
+          {
             "type": "string",
             "named": true
           },
@@ -1629,6 +1653,10 @@
           },
           {
             "type": "record_expr",
+            "named": true
+          },
+          {
+            "type": "sequence_expr",
             "named": true
           },
           {
@@ -1838,6 +1866,10 @@
           "named": true
         },
         {
+          "type": "sequence_expr",
+          "named": true
+        },
+        {
           "type": "spread_entry",
           "named": true
         },
@@ -1953,6 +1985,10 @@
           },
           {
             "type": "record_expr",
+            "named": true
+          },
+          {
+            "type": "sequence_expr",
             "named": true
           },
           {
@@ -2193,6 +2229,10 @@
         },
         {
           "type": "record_expr",
+          "named": true
+        },
+        {
+          "type": "sequence_expr",
           "named": true
         },
         {
@@ -2529,6 +2569,10 @@
           "named": true
         },
         {
+          "type": "sequence_expr",
+          "named": true
+        },
+        {
           "type": "string",
           "named": true
         },
@@ -2614,6 +2658,180 @@
           "named": true
         }
       ]
+    }
+  },
+  {
+    "type": "sequence_expr",
+    "named": true,
+    "fields": {
+      "head": {
+        "multiple": false,
+        "required": true,
+        "types": [
+          {
+            "type": "apply",
+            "named": true
+          },
+          {
+            "type": "binary_expr",
+            "named": true
+          },
+          {
+            "type": "bool",
+            "named": true
+          },
+          {
+            "type": "field_access",
+            "named": true
+          },
+          {
+            "type": "hole",
+            "named": true
+          },
+          {
+            "type": "identifier",
+            "named": true
+          },
+          {
+            "type": "if_expr",
+            "named": true
+          },
+          {
+            "type": "list_expr",
+            "named": true
+          },
+          {
+            "type": "number",
+            "named": true
+          },
+          {
+            "type": "paren_expr",
+            "named": true
+          },
+          {
+            "type": "pipe_expr",
+            "named": true
+          },
+          {
+            "type": "record_expr",
+            "named": true
+          },
+          {
+            "type": "string",
+            "named": true
+          },
+          {
+            "type": "trait_call",
+            "named": true
+          },
+          {
+            "type": "type_identifier",
+            "named": true
+          },
+          {
+            "type": "unary_expr",
+            "named": true
+          },
+          {
+            "type": "variant_expr",
+            "named": true
+          }
+        ]
+      },
+      "tail": {
+        "multiple": false,
+        "required": true,
+        "types": [
+          {
+            "type": "apply",
+            "named": true
+          },
+          {
+            "type": "binary_expr",
+            "named": true
+          },
+          {
+            "type": "bool",
+            "named": true
+          },
+          {
+            "type": "field_access",
+            "named": true
+          },
+          {
+            "type": "hole",
+            "named": true
+          },
+          {
+            "type": "identifier",
+            "named": true
+          },
+          {
+            "type": "if_expr",
+            "named": true
+          },
+          {
+            "type": "lambda",
+            "named": true
+          },
+          {
+            "type": "let_in_expr",
+            "named": true
+          },
+          {
+            "type": "list_expr",
+            "named": true
+          },
+          {
+            "type": "match_expr",
+            "named": true
+          },
+          {
+            "type": "match_in_expr",
+            "named": true
+          },
+          {
+            "type": "number",
+            "named": true
+          },
+          {
+            "type": "paren_expr",
+            "named": true
+          },
+          {
+            "type": "pipe_expr",
+            "named": true
+          },
+          {
+            "type": "record_expr",
+            "named": true
+          },
+          {
+            "type": "sequence_expr",
+            "named": true
+          },
+          {
+            "type": "string",
+            "named": true
+          },
+          {
+            "type": "trait_call",
+            "named": true
+          },
+          {
+            "type": "type_identifier",
+            "named": true
+          },
+          {
+            "type": "unary_expr",
+            "named": true
+          },
+          {
+            "type": "variant_expr",
+            "named": true
+          }
+        ]
+      }
     }
   },
   {
@@ -3178,6 +3396,10 @@
   },
   {
     "type": ":",
+    "named": false
+  },
+  {
+    "type": ";",
     "named": false
   },
   {

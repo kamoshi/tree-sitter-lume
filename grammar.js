@@ -229,6 +229,12 @@ module.exports = grammar({
 		// GLR forks the two interpretations of `variant` and resolves based on
 		// whether `infixl`/`infixr`/`infix` follows (fixity) or a type (paren_type).
 		[$.variant],
+
+		// -- sequence_expr vs lambda/let body closing --------------------------
+		// After `_binary_expr ';'` in a lambda body or any `_expr` context,
+		// `prec.right(PREC.FUNCTION)` on `sequence_expr` ensures `;` always
+		// shifts into sequence_expr rather than closing the containing expression.
+		// No explicit GLR conflict entry needed; precedence resolves this.
 	],
 
 	rules: {
@@ -505,8 +511,11 @@ module.exports = grammar({
 			),
 
 		// `let pattern (: type)? = value in body` — expression-level let binding.
-		// Unlike top-level `binding`, this requires the `in` keyword and produces
-		// a value. Chaining is natural: `let x = 1 in let y = 2 in x + y`.
+		// Unlike top-level `binding`, this requires `in` or `;` and produces a
+		// value. Chaining is natural: `let x = 1 in let y = 2 in x + y`.
+		// Also accepts `;` as sugar for `in`: `let x = 1; let y = 2; x + y`.
+		// The value field uses `_seq_head` (no sequences at the top level) to
+		// prevent the `;` separator from being consumed by the value.
 		// `let` is a keyword so it cannot appear in `pattern` or `_atom`, meaning
 		// no GLR conflict with lambda or _atom arises here.
 		let_in_expr: ($) =>
@@ -515,9 +524,27 @@ module.exports = grammar({
 				field("pattern", $.pattern),
 				optional(seq(":", field("type", $.type))),
 				"=",
-				field("value", $._expr),
-				"in",
+				field("value", $._seq_head),
+				choice("in", ";"),
 				field("body", $._expr),
+			),
+
+		// `e1; e2` — evaluate e1 for its side-effect, then return e2.
+		// Only `_binary_expr` can start a sequence — `lambda` and `match` forms
+		// already bind `;` through their body `_expr`, so `a -> b; c` parses as
+		// `lambda(a, sequence(b, c))` rather than `sequence(lambda(a, b), c)`.
+		// `let` always starts `let_in_expr` which handles its own `;` separator.
+		// `prec.right(PREC.FUNCTION)` gives sequence_expr the same priority as
+		// lambda. On a tie, prec.right prefers SHIFT, so `;` is always consumed
+		// into a sequence_expr inside lambda/match bodies rather than closing them.
+		sequence_expr: ($) =>
+			prec.right(
+				PREC.FUNCTION,
+				seq(
+					field("head", $._binary_expr),
+					";",
+					field("tail", $._expr),
+				),
 			),
 
 		// ========================================================================
@@ -537,7 +564,13 @@ module.exports = grammar({
 		// In tree-sitter you write the same three choices; the LR automaton works
 		// out the distinction from the token stream. The GLR [$.pattern, $._atom]
 		// conflict handles the lambda/expression ambiguity for the first two cases.
-		_expr: ($) => choice($.let_in_expr, $.lambda, $.match_expr, $.match_in_expr, $._binary_expr),
+		//
+		// `_seq_head` is a subset of `_expr` that excludes `sequence_expr` itself.
+		// It is used as the value in `let_in_expr` to prevent the `;` separator
+		// from being consumed by the value, and as the head of `sequence_expr` to
+		// keep `let … ; body` parsed as `let_in_expr` rather than a sequence.
+		_seq_head: ($) => choice($.let_in_expr, $.lambda, $.match_expr, $.match_in_expr, $._binary_expr),
+		_expr: ($) => choice($.sequence_expr, $.let_in_expr, $.lambda, $.match_expr, $.match_in_expr, $._binary_expr),
 
 		// -- Match-in expression -----------------------------------------------
 		//
