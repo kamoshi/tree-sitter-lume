@@ -265,14 +265,15 @@ module.exports = grammar({
 		// (longest match). Because comment is in `extras`, the automaton eats
 		// comments between any two tokens without any grammar rule needing to
 		// account for them.
+		// prec(2) ensures comments win over custom operators (prec 0) when "--" appears.
 		// Doc comments `---` are a separate rule with higher priority.
-		comment: ($) => token(prec(-1, /--.*/)),
+		comment: ($) => token(prec(2, /--.*/)),
 
 		// Doc comments use three dashes `---`. They are also in `extras` so they
 		// can appear between any two tokens and are preserved in the syntax tree.
 		// The compiler attaches them to the following declaration.
 		// Higher priority than regular comments so `---` is always doc_comment.
-		doc_comment: ($) => token(prec(1, /---.*/)),
+		doc_comment: ($) => token(prec(3, /---.*/)),
 
 		// ========================================================================
 		// DECLARATIONS
@@ -1267,12 +1268,16 @@ module.exports = grammar({
 
 		// Custom operators: sequences of operator characters that don't match any
 		// built-in operator. The Lume lexer greedily collects from the set
-		// `+ * / = ! < > | & ? $ # @ ^ ~` and classifies known sequences; anything
-		// else becomes a custom operator. Examples: <>, >>=, <*>, <=>, <|>, $, #.
+		// `+ * / = ! < > | & ? $ # @ ^ ~ % \ . - :` and classifies known sequences;
+		// standalone ".", "..", "-", "->", ":" remain reserved tokens;
+		// anything else is a custom operator.
 		//
-		// prec(-1) ensures built-in operator string literals (++, |>, etc.) always
+		// Comment tokens ("--", "---") have prec(2)/prec(3) so they always beat
+		// the operator regex (prec 0) when "--" appears at the lexer level.
+		//
+		// prec(0) ensures built-in operator string literals (++, |>, etc.) always
 		// win over the regex when they match, but novel combinations lex as operator.
-		operator: ($) => token(prec(0, /[+*\/=!<>|&?$#@^~][+*\/=!<>|&?$#@^~]+/)),
+		operator: ($) => token(prec(0, /[+*\/=!<>|&?$#@^~%\\.:\-][+*\/=!<>|&?$#@^~%\\.:\-]+/)),
 
 		// Parenthesized operator name — used in operator-as-value `(++)` and in
 		// trait/impl method definitions: `let (++) : a -> a -> a`.

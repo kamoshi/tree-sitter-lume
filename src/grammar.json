@@ -65,7 +65,7 @@
       "type": "TOKEN",
       "content": {
         "type": "PREC",
-        "value": -1,
+        "value": 2,
         "content": {
           "type": "PATTERN",
           "value": "--.*"
@@ -76,7 +76,7 @@
       "type": "TOKEN",
       "content": {
         "type": "PREC",
-        "value": 1,
+        "value": 3,
         "content": {
           "type": "PATTERN",
           "value": "---.*"
@@ -2854,7 +2854,7 @@
         "value": 0,
         "content": {
           "type": "PATTERN",
-          "value": "[+*\\/=!<>|&?$#@^~][+*\\/=!<>|&?$#@^~]+"
+          "value": "[+*\\/=!<>|&?$#@^~%\\\\.:\\-][+*\\/=!<>|&?$#@^~%\\\\.:\\-]+"
         }
       }
     },
