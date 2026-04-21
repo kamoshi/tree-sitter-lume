@@ -599,11 +599,23 @@
     "named": true,
     "fields": {
       "name": {
-        "multiple": false,
+        "multiple": true,
         "required": true,
         "types": [
           {
+            "type": "(",
+            "named": false
+          },
+          {
+            "type": ")",
+            "named": false
+          },
+          {
             "type": "identifier",
+            "named": true
+          },
+          {
+            "type": "operator_name",
             "named": true
           },
           {
@@ -709,11 +721,23 @@
     "named": true,
     "fields": {
       "name": {
-        "multiple": false,
+        "multiple": true,
         "required": true,
         "types": [
           {
+            "type": "(",
+            "named": false
+          },
+          {
+            "type": ")",
+            "named": false
+          },
+          {
             "type": "identifier",
+            "named": true
+          },
+          {
+            "type": "operator_name",
             "named": true
           },
           {
@@ -754,6 +778,84 @@
         "types": [
           {
             "type": "type",
+            "named": true
+          }
+        ]
+      }
+    }
+  },
+  {
+    "type": "fixity_annotation",
+    "named": true,
+    "fields": {
+      "associativity": {
+        "multiple": false,
+        "required": true,
+        "types": [
+          {
+            "type": "infix",
+            "named": false
+          },
+          {
+            "type": "infixl",
+            "named": false
+          },
+          {
+            "type": "infixr",
+            "named": false
+          }
+        ]
+      },
+      "precedence": {
+        "multiple": false,
+        "required": true,
+        "types": [
+          {
+            "type": "number",
+            "named": true
+          }
+        ]
+      }
+    }
+  },
+  {
+    "type": "fixity_declaration",
+    "named": true,
+    "fields": {
+      "associativity": {
+        "multiple": false,
+        "required": true,
+        "types": [
+          {
+            "type": "infix",
+            "named": false
+          },
+          {
+            "type": "infixl",
+            "named": false
+          },
+          {
+            "type": "infixr",
+            "named": false
+          }
+        ]
+      },
+      "operator": {
+        "multiple": false,
+        "required": true,
+        "types": [
+          {
+            "type": "operator_name",
+            "named": true
+          }
+        ]
+      },
+      "precedence": {
+        "multiple": false,
+        "required": true,
+        "types": [
+          {
+            "type": "number",
             "named": true
           }
         ]
@@ -2361,6 +2463,10 @@
           "named": true
         },
         {
+          "type": "fixity_declaration",
+          "named": true
+        },
+        {
           "type": "hole",
           "named": true
         },
@@ -2645,6 +2751,16 @@
     "type": "trait_method",
     "named": true,
     "fields": {
+      "fixity": {
+        "multiple": false,
+        "required": false,
+        "types": [
+          {
+            "type": "fixity_annotation",
+            "named": true
+          }
+        ]
+      },
       "name": {
         "multiple": true,
         "required": true,
@@ -3130,6 +3246,18 @@
   },
   {
     "type": "in",
+    "named": false
+  },
+  {
+    "type": "infix",
+    "named": false
+  },
+  {
+    "type": "infixl",
+    "named": false
+  },
+  {
+    "type": "infixr",
     "named": false
   },
   {

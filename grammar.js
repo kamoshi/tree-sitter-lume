@@ -220,6 +220,15 @@ module.exports = grammar({
 		// without binding_param (lambdas, match arms, let_in_expr) only fork (a)
 		// succeeds, so the ambiguity is harmless outside of `binding`.
 		[$.pattern],
+
+		// -- variant vs fixity_declaration -------------------------------------
+		// After `type Foo = Bar`, when `(` appears, it could be:
+		//   (a) A paren_type argument to the `Bar` variant: `type Foo = Bar (List a)`
+		//   (b) The start of a top-level fixity_declaration: `(<<) infixl 7`
+		//
+		// GLR forks the two interpretations of `variant` and resolves based on
+		// whether `infixl`/`infixr`/`infix` follows (fixity) or a type (paren_type).
+		[$.variant],
 	],
 
 	rules: {
@@ -246,6 +255,7 @@ module.exports = grammar({
 						$.trait_definition,
 						$.impl_definition,
 						$.binding,
+						$.fixity_declaration,
 					),
 				),
 				optional(seq("pub", $._expr)),
@@ -278,6 +288,28 @@ module.exports = grammar({
 					seq(field("pattern", $.record_pattern), "="),
 				),
 				field("path", $.string),
+			),
+
+		// Operator fixity declarations: `(op) infixl N`, `(op) infixr N`, `(op) infix N`
+		// These declare the associativity and precedence of a custom operator.
+		// `infixl` = left-associative, `infixr` = right-associative, `infix` = non-associative.
+		// N is an integer precedence level (0–9).
+		fixity_declaration: ($) =>
+			seq(
+				"(",
+				field("operator", $.operator_name),
+				")",
+				field("associativity", choice("infixl", "infixr", "infix")),
+				field("precedence", $.number),
+			),
+
+		// Inline fixity annotation used inside trait method declarations.
+		// Example: `let (++) infixl 6 : a -> a -> a`
+		// This is the associativity+precedence part without the surrounding `(op)`.
+		fixity_annotation: ($) =>
+			seq(
+				field("associativity", choice("infixl", "infixr", "infix")),
+				field("precedence", $.number),
 			),
 
 		type_definition: ($) =>
@@ -401,12 +433,14 @@ module.exports = grammar({
 
 		// A trait method signature: `let toText : a -> Text`
 		// Also supports operator methods: `let (++) : a -> a -> a`
+		// Operator methods can declare fixity: `let (++) infixl 6 : a -> a -> a`
 		// Optional trailing comma allows both comma-separated and whitespace-
 		// separated styles inside the trait body.
 		trait_method: ($) =>
 			seq(
 				"let",
 				field("name", choice($.identifier, seq("(", $.operator_name, ")"))),
+				optional(field("fixity", $.fixity_annotation)),
 				":",
 				field("type", $.type),
 				optional(","),
@@ -986,13 +1020,22 @@ module.exports = grammar({
 		// field_initializer: `name` (shorthand) or `name: value` (explicit).
 		// The name can be a lowercase identifier OR an uppercase type_identifier
 		// (for constructor shorthand: `pub { Circle }` exports the constructor).
+		// Also supports `(op)` operator names for operator exports:
+		// `pub { (<<), (>>) }`.
 		// The [$.field_pattern, $.field_initializer] GLR conflict arises because
 		// both share the `identifier optional(":" ...)` prefix - the difference is
 		// only resolved when we know whether we're inside a record_pattern or a
 		// record_expr, which depends on whether `->` follows the enclosing `{...}`.
 		field_initializer: ($) =>
 			seq(
-				field("name", choice($.identifier, $.type_identifier)),
+				field(
+					"name",
+					choice(
+						$.identifier,
+						$.type_identifier,
+						seq("(", $.operator_name, ")"),
+					),
+				),
 				optional(seq(":", field("value", $._expr))),
 			),
 
@@ -1052,9 +1095,18 @@ module.exports = grammar({
 		// The name can be a lowercase identifier OR an uppercase type_identifier
 		// to support module imports like `use { Shape, Circle } = "path"` where
 		// constructors/types are also valid field names.
+		// Also supports `(op)` operator names for operator imports:
+		// `use { (<<), (>>) } = "path"`.
 		field_pattern: ($) =>
 			seq(
-				field("name", choice($.identifier, $.type_identifier)),
+				field(
+					"name",
+					choice(
+						$.identifier,
+						$.type_identifier,
+						seq("(", $.operator_name, ")"),
+					),
+				),
 				optional(seq(":", field("pattern", $.pattern))),
 			),
 

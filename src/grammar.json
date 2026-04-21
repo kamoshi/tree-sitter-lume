@@ -30,6 +30,10 @@
               {
                 "type": "SYMBOL",
                 "name": "binding"
+              },
+              {
+                "type": "SYMBOL",
+                "name": "fixity_declaration"
               }
             ]
           }
@@ -131,6 +135,90 @@
           "content": {
             "type": "SYMBOL",
             "name": "string"
+          }
+        }
+      ]
+    },
+    "fixity_declaration": {
+      "type": "SEQ",
+      "members": [
+        {
+          "type": "STRING",
+          "value": "("
+        },
+        {
+          "type": "FIELD",
+          "name": "operator",
+          "content": {
+            "type": "SYMBOL",
+            "name": "operator_name"
+          }
+        },
+        {
+          "type": "STRING",
+          "value": ")"
+        },
+        {
+          "type": "FIELD",
+          "name": "associativity",
+          "content": {
+            "type": "CHOICE",
+            "members": [
+              {
+                "type": "STRING",
+                "value": "infixl"
+              },
+              {
+                "type": "STRING",
+                "value": "infixr"
+              },
+              {
+                "type": "STRING",
+                "value": "infix"
+              }
+            ]
+          }
+        },
+        {
+          "type": "FIELD",
+          "name": "precedence",
+          "content": {
+            "type": "SYMBOL",
+            "name": "number"
+          }
+        }
+      ]
+    },
+    "fixity_annotation": {
+      "type": "SEQ",
+      "members": [
+        {
+          "type": "FIELD",
+          "name": "associativity",
+          "content": {
+            "type": "CHOICE",
+            "members": [
+              {
+                "type": "STRING",
+                "value": "infixl"
+              },
+              {
+                "type": "STRING",
+                "value": "infixr"
+              },
+              {
+                "type": "STRING",
+                "value": "infix"
+              }
+            ]
+          }
+        },
+        {
+          "type": "FIELD",
+          "name": "precedence",
+          "content": {
+            "type": "SYMBOL",
+            "name": "number"
           }
         }
       ]
@@ -586,6 +674,22 @@
               }
             ]
           }
+        },
+        {
+          "type": "CHOICE",
+          "members": [
+            {
+              "type": "FIELD",
+              "name": "fixity",
+              "content": {
+                "type": "SYMBOL",
+                "name": "fixity_annotation"
+              }
+            },
+            {
+              "type": "BLANK"
+            }
+          ]
         },
         {
           "type": "STRING",
@@ -2102,6 +2206,23 @@
               {
                 "type": "SYMBOL",
                 "name": "type_identifier"
+              },
+              {
+                "type": "SEQ",
+                "members": [
+                  {
+                    "type": "STRING",
+                    "value": "("
+                  },
+                  {
+                    "type": "SYMBOL",
+                    "name": "operator_name"
+                  },
+                  {
+                    "type": "STRING",
+                    "value": ")"
+                  }
+                ]
               }
             ]
           }
@@ -2294,6 +2415,23 @@
               {
                 "type": "SYMBOL",
                 "name": "type_identifier"
+              },
+              {
+                "type": "SEQ",
+                "members": [
+                  {
+                    "type": "STRING",
+                    "value": "("
+                  },
+                  {
+                    "type": "SYMBOL",
+                    "name": "operator_name"
+                  },
+                  {
+                    "type": "STRING",
+                    "value": ")"
+                  }
+                ]
               }
             ]
           }
@@ -2850,6 +2988,9 @@
     ],
     [
       "pattern"
+    ],
+    [
+      "variant"
     ]
   ],
   "precedences": [],
