@@ -358,6 +358,10 @@
             "named": true
           },
           {
+            "type": "do_expr",
+            "named": true
+          },
+          {
             "type": "field_access",
             "named": true
           },
@@ -586,6 +590,240 @@
     }
   },
   {
+    "type": "do_expr",
+    "named": true,
+    "fields": {
+      "monad": {
+        "multiple": false,
+        "required": false,
+        "types": [
+          {
+            "type": "type_identifier",
+            "named": true
+          }
+        ]
+      },
+      "tail": {
+        "multiple": false,
+        "required": true,
+        "types": [
+          {
+            "type": "apply",
+            "named": true
+          },
+          {
+            "type": "binary_expr",
+            "named": true
+          },
+          {
+            "type": "bool",
+            "named": true
+          },
+          {
+            "type": "do_expr",
+            "named": true
+          },
+          {
+            "type": "field_access",
+            "named": true
+          },
+          {
+            "type": "hole",
+            "named": true
+          },
+          {
+            "type": "identifier",
+            "named": true
+          },
+          {
+            "type": "if_expr",
+            "named": true
+          },
+          {
+            "type": "lambda",
+            "named": true
+          },
+          {
+            "type": "let_in_expr",
+            "named": true
+          },
+          {
+            "type": "list_expr",
+            "named": true
+          },
+          {
+            "type": "match_expr",
+            "named": true
+          },
+          {
+            "type": "match_in_expr",
+            "named": true
+          },
+          {
+            "type": "number",
+            "named": true
+          },
+          {
+            "type": "paren_expr",
+            "named": true
+          },
+          {
+            "type": "pipe_expr",
+            "named": true
+          },
+          {
+            "type": "record_expr",
+            "named": true
+          },
+          {
+            "type": "sequence_expr",
+            "named": true
+          },
+          {
+            "type": "string",
+            "named": true
+          },
+          {
+            "type": "trait_call",
+            "named": true
+          },
+          {
+            "type": "type_identifier",
+            "named": true
+          },
+          {
+            "type": "unary_expr",
+            "named": true
+          },
+          {
+            "type": "variant_expr",
+            "named": true
+          }
+        ]
+      }
+    },
+    "children": {
+      "multiple": true,
+      "required": false,
+      "types": [
+        {
+          "type": "do_stmt",
+          "named": true
+        }
+      ]
+    }
+  },
+  {
+    "type": "do_stmt",
+    "named": true,
+    "fields": {
+      "pattern": {
+        "multiple": false,
+        "required": false,
+        "types": [
+          {
+            "type": "pattern",
+            "named": true
+          }
+        ]
+      },
+      "value": {
+        "multiple": false,
+        "required": true,
+        "types": [
+          {
+            "type": "apply",
+            "named": true
+          },
+          {
+            "type": "binary_expr",
+            "named": true
+          },
+          {
+            "type": "bool",
+            "named": true
+          },
+          {
+            "type": "do_expr",
+            "named": true
+          },
+          {
+            "type": "field_access",
+            "named": true
+          },
+          {
+            "type": "hole",
+            "named": true
+          },
+          {
+            "type": "identifier",
+            "named": true
+          },
+          {
+            "type": "if_expr",
+            "named": true
+          },
+          {
+            "type": "lambda",
+            "named": true
+          },
+          {
+            "type": "let_in_expr",
+            "named": true
+          },
+          {
+            "type": "list_expr",
+            "named": true
+          },
+          {
+            "type": "match_expr",
+            "named": true
+          },
+          {
+            "type": "match_in_expr",
+            "named": true
+          },
+          {
+            "type": "number",
+            "named": true
+          },
+          {
+            "type": "paren_expr",
+            "named": true
+          },
+          {
+            "type": "pipe_expr",
+            "named": true
+          },
+          {
+            "type": "record_expr",
+            "named": true
+          },
+          {
+            "type": "string",
+            "named": true
+          },
+          {
+            "type": "trait_call",
+            "named": true
+          },
+          {
+            "type": "type_identifier",
+            "named": true
+          },
+          {
+            "type": "unary_expr",
+            "named": true
+          },
+          {
+            "type": "variant_expr",
+            "named": true
+          }
+        ]
+      }
+    }
+  },
+  {
     "type": "field_access",
     "named": true,
     "fields": {},
@@ -652,6 +890,10 @@
           },
           {
             "type": "bool",
+            "named": true
+          },
+          {
+            "type": "do_expr",
             "named": true
           },
           {
@@ -1059,6 +1301,10 @@
             "named": true
           },
           {
+            "type": "do_expr",
+            "named": true
+          },
+          {
             "type": "field_access",
             "named": true
           },
@@ -1150,6 +1396,10 @@
           },
           {
             "type": "bool",
+            "named": true
+          },
+          {
+            "type": "do_expr",
             "named": true
           },
           {
@@ -1311,6 +1561,10 @@
           },
           {
             "type": "bool",
+            "named": true
+          },
+          {
+            "type": "do_expr",
             "named": true
           },
           {
@@ -1494,6 +1748,10 @@
             "named": true
           },
           {
+            "type": "do_expr",
+            "named": true
+          },
+          {
             "type": "field_access",
             "named": true
           },
@@ -1601,6 +1859,10 @@
           },
           {
             "type": "bool",
+            "named": true
+          },
+          {
+            "type": "do_expr",
             "named": true
           },
           {
@@ -1718,6 +1980,10 @@
             "named": true
           },
           {
+            "type": "do_expr",
+            "named": true
+          },
+          {
             "type": "field_access",
             "named": true
           },
@@ -1811,6 +2077,10 @@
         },
         {
           "type": "bool",
+          "named": true
+        },
+        {
+          "type": "do_expr",
           "named": true
         },
         {
@@ -1933,6 +2203,10 @@
           },
           {
             "type": "bool",
+            "named": true
+          },
+          {
+            "type": "do_expr",
             "named": true
           },
           {
@@ -2173,6 +2447,10 @@
         },
         {
           "type": "bool",
+          "named": true
+        },
+        {
+          "type": "do_expr",
           "named": true
         },
         {
@@ -2509,6 +2787,10 @@
           "named": true
         },
         {
+          "type": "do_expr",
+          "named": true
+        },
+        {
           "type": "field_access",
           "named": true
         },
@@ -2752,6 +3034,10 @@
           },
           {
             "type": "bool",
+            "named": true
+          },
+          {
+            "type": "do_expr",
             "named": true
           },
           {
@@ -3407,6 +3693,10 @@
     "named": false
   },
   {
+    "type": "<-",
+    "named": false
+  },
+  {
     "type": "<=",
     "named": false
   },
@@ -3454,6 +3744,10 @@
     "type": "comment",
     "named": true,
     "extra": true
+  },
+  {
+    "type": "do",
+    "named": false
   },
   {
     "type": "doc_comment",

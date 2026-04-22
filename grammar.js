@@ -235,6 +235,13 @@ module.exports = grammar({
 		// `prec.right(PREC.FUNCTION)` on `sequence_expr` ensures `;` always
 		// shifts into sequence_expr rather than closing the containing expression.
 		// No explicit GLR conflict entry needed; precedence resolves this.
+
+		// -- do_stmt let binding vs let_in_expr inside do blocks ---------------
+		// Inside a do block, `let pat = val ;` is ambiguous: `;` could close the
+		// do_stmt OR act as the `in` separator of a let_in_expr wrapping `val`.
+		// GLR forks both interpretations; inside a `do { }` block the `do_stmt`
+		// path succeeds and the let_in_expr path fails (no body after the `}`).
+		[$.let_in_expr, $.do_stmt],
 	],
 
 	rules: {
@@ -569,10 +576,40 @@ module.exports = grammar({
 		// It is used as the value in `let_in_expr` to prevent the `;` separator
 		// from being consumed by the value, and as the head of `sequence_expr` to
 		// keep `let … ; body` parsed as `let_in_expr` rather than a sequence.
-		_seq_head: ($) => choice($.let_in_expr, $.lambda, $.match_expr, $.match_in_expr, $._binary_expr),
-		_expr: ($) => choice($.sequence_expr, $.let_in_expr, $.lambda, $.match_expr, $.match_in_expr, $._binary_expr),
+		_seq_head: ($) => choice($.let_in_expr, $.lambda, $.match_expr, $.match_in_expr, $.do_expr, $._binary_expr),
+		_expr: ($) => choice($.sequence_expr, $.let_in_expr, $.lambda, $.match_expr, $.match_in_expr, $.do_expr, $._binary_expr),
 
-		// -- Match-in expression -----------------------------------------------
+		// -- Do expression (monadic do-notation) ----------------------------------
+		//
+		// `do { stmts... tail }` or `do Monad { stmts... tail }`
+		// Each statement inside the block is one of:
+		//   let pat = val;   — pure binding
+		//   let pat <- val;  — monadic bind (desugars to Monad.and_then)
+		//   expr;            — sequenced side-effect
+		// The final element (the tail) is an expression without a trailing `;`.
+		//
+		// `_do_val` is unused but kept as a comment reference. `do_stmt` uses
+		// `_seq_head` for its values so lambdas and matches work as values.
+		// `prec.dynamic(1, ...)` on `do_stmt` ensures it beats `let_in_expr`
+		// when GLR forks `let pat = val ;` inside a `do { }` block.
+		do_expr: ($) =>
+			seq(
+				"do",
+				optional(field("monad", $.type_identifier)),
+				"{",
+				repeat($.do_stmt),
+				field("tail", $._expr),
+				"}",
+			),
+
+		do_stmt: ($) =>
+			prec.dynamic(1, choice(
+				seq("let", field("pattern", $.pattern), "=",  field("value", $._seq_head), ";"),
+				seq("let", field("pattern", $.pattern), "<-", field("value", $._seq_head), ";"),
+				seq(field("value", $._seq_head), ";"),
+			)),
+
+
 		//
 		// `match scrutinee in | pat -> body | pat -> body`
 		// An explicit scrutinee version of match. The keyword `match` unambiguously
